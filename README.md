@@ -1,8 +1,8 @@
 🕌 AI Quran Assistant
 
-https://img.shields.io/badge/Platform-Cloudflare%20Workers-blue
-https://img.shields.io/badge/AI-Llama%203.3%2070B-orange
-https://img.shields.io/badge/License-MIT-green
+![Platform](https://img.shields.io/badge/Platform-Cloudflare%20Workers-blue)
+![AI](https://img.shields.io/badge/AI-Llama%203.3%2070B-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 Asisten AI cerdas untuk belajar dan memahami Al-Quran, dibangun dengan Cloudflare Workers dan model Llama 3.3.
 
