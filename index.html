@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stad - AI Quran</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #131314;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #131314;
+            z-index: 100;
+        }
+
+        .menu-icon {
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .menu-icon span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            margin: 4px 0;
+            transition: 0.3s;
+        }
+
+        .menu-icon.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-icon.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-icon.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            color: #4285f4;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            flex: 1 1;
+            display: flex;
+            flex-direction: column;
+            padding-top: 60px;
+            padding-bottom: 140px;
+        }
+
+        /* Welcome State */
+        .welcome-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .welcome-state.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .stad-sparkle {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1.5rem;
+        }
+
+        .welcome-text {
+            text-align: center;
+            font-size: 100%;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Chat State */
+        .chat-container {
+            position: relative;
+            flex: 1 1;
+            padding: 1rem;
+            padding-bottom: 2rem;
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.5s ease;
+            overflow-y: auto; 
+            scroll-behavior: smooth;
+            scroll-padding-bottom: 160px;
+        }
+
+        .chat-container.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* User Message */
+        .user-message {
+            align-self: flex-end;
+            background: #3c4043;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            max-width: 80%;
+            animation: slideInRight 0.4s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* AI Response */
+        .ai-response {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            animation: fadeInUp 0.5s ease 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-star {
+            width: 24px;
+            height: 24px;
+        }
+
+        .sound-icon {
+            background:#131314;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .sound-icon:hover {
+            opacity: 1;
+        }
+
+        .ai-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.6;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .action-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .more-btn {
+            margin-left: auto;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 1rem;
+        }
+
+        /* Input Area */
+        .input-area {
+            max-width:500px;
+            margin: auto;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #131314;
+            padding: 1rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+
+        .input-area.chat-mode {
+            background: #1e1f20;
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+        }
+
+        .input-wrapper {
+            background: #1e1f20;
+            border-radius: 1.5rem;
+            padding: 1rem 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-area.chat-mode .input-wrapper {
+            background: transparent;
+            padding: 0.5rem 0;
+        }
+
+        .input-field {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .input-field textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            resize: none; 
+            overflow: hidden;
+            padding: 0; 
+            margin-top: 4px;
+            max-height: 100px;
+            font-family: inherit;
+        }
+
+        .input-field textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-area.chat-mode .input-actions {
+            margin-top: 0.5rem;
+        }
+
+        .left-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .action-icon:hover {
+            opacity: 1;
+        }
+
+        .right-actions {
+            width: auto;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .model-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .model-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Tombol Wave & Send */
+        .wave-btn, .verse-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .wave-btn.hidden {
+            display: none;
+        }
+
+        .send-btn {
+            background: #4285f4;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; 
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            transform: scale(0);
+        }
+
+        .send-btn.visible {
+            display: flex;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .send-btn:hover {
+            background: #5a95f5;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 1rem 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #4285f4;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+        }
+        
+        svg {
+            fill: white;
+        }
+        
+        .action-sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 400;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .action-sheet-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .action-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #1e1f20;
+            z-index: 500;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .action-sheet.active {
+            transform: translateY(0);
+        }
+        
+        .action-sheet-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-sheet-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #4285f4;
+        }
+
+        .close-action-sheet {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            padding: 0.25rem;
+        }
+
+        .close-action-sheet:hover {
+            opacity: 1;
+        }
+
+        .action-sheet-body {
+            padding: 1.5rem 1.25rem 2rem;
+        }
+
+        .verse-selection-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .verse-selection-controls label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: -0.5rem;
+        }
+
+        .styled-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #3c4043;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .styled-select:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .select-verse-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #4285f4;
+            border: none;
+            color: white;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .select-verse-btn:hover {
+            background: #5a95f5;
+        }
+
+        /* OFF CANVAS SIDEBAR */
+        .offcanvas-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .offcanvas-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .offcanvas-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 320px;
+            background: #1e1f20;
+            z-index: 300;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .offcanvas-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .offcanvas-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .offcanvas-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .close-offcanvas {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            padding: 0.25rem;
+        }
+
+        .close-offcanvas:hover {
+            opacity: 1;
+        }
+
+        .offcanvas-body {
+            position: relative;
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid rgba(66, 133, 244, 0.3);
+            color: white;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: rgba(66, 133, 244, 0.2);
+        }
+
+        .new-chat-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #4285f4;
+        }
+
+        .chat-history-title {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+
+        .chat-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chat-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-history-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chat-history-item.active {
+            background: rgba(66, 133, 244, 0.15);
+            border-left: 3px solid #4285f4;
+        }
+
+        .chat-preview {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-preview-title {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-preview-date {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .delete-chat-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.5;
+            transition: opacity 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-chat-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .delete-chat-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .no-chats-message {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        .quran-arabic {
+            font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+            font-size: 1.5rem;
+            text-align: right;
+            direction: rtl;
+            line-height: 1.8;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            border-right: 3px solid #4285f4;
+        }
+
+        .quran-translation {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.5rem;
+            border-left: 2px solid #34a853;
+        }
+        
+        .verse-header {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.5rem;
+        }
+        .surah-title {
+            color: #4285f4;
+            font-weight: 500;
+        }
+        .arabic-text {
+            font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            border-right: 3px solid #4285f4;
+            margin-bottom: 0.75rem;
+        }
+        .translation-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.5rem;
+            border-left: 2px solid #34a853;
+        }
+
+        .verse-container {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .verse-reference {
+            font-size: 0.85rem;
+            color: #4285f4;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .copy-btn {
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid rgba(66, 133, 244, 0.3);
+            color: #4285f4;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background: rgba(66, 133, 244, 0.2);
+        }
+
+        .copy-btn.copied {
+            background: rgba(52, 168, 83, 0.2);
+            border-color: rgba(52, 168, 83, 0.3);
+            color: #34a853;
+        }
+
+        .source-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .language-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .language-toggle-wrapper {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1.5rem;
+        }
+        
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 50px;
+          height: 28px;
+        }
+
+        .switch input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 28px;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 20px;
+          width: 20px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+
+        input:checked + .slider {
+          background-color: #4285f4;
+        }
+
+        input:focus + .slider {
+          box-shadow: 0 0 1px #4285f4;
+        }
+
+        input:checked + .slider:before {
+          transform: translateX(22px);
+        }
+        
+        .lang-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: rgba(234, 67, 53, 0.1);
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            color: #ea4335;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .usage-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .usage-section {
+            margin-bottom: 0.75rem;
+        }
+
+        .usage-title {
+            color: #4285f4;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .usage-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .usage-label {
+            font-weight: 500;
+        }
+
+        .usage-value {
+            color: #34a853;
+        }
+
+        /* Responsif untuk mobile */
+        @media (max-width: 768px) {
+            .offcanvas-sidebar {
+                width: 280px;
+            }
+            
+            .quran-arabic {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .offcanvas-sidebar {
+                width: 100%;
+            }
+            
+            .quran-arabic {
+                font-size: 1.2rem;
+            }
+            
+            .input-area {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="menu-icon" id="menuIcon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="logo" id="chatTitle">
+            <span class="logo-icon">stad</span>
+             AI
+        </div>
+        <div class="avatar">AI</div>
+    </header>
+
+    <div class="offcanvas-overlay" id="offcanvasOverlay"></div>
+
+    <div class="offcanvas-sidebar" id="offcanvasSidebar">
+        <div class="offcanvas-header">
+            <div class="offcanvas-title">Riwayat Percakapan</div>
+            <button class="close-offcanvas" id="closeOffcanvas">&times;</button>
+        </div>
+        <div class="offcanvas-body">
+            <button class="new-chat-btn" id="newChatBtn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <span>Obrolan Baru</span>
+            </button>
+            
+            <div class="chat-history-title">Obrolan Terbaru</div>
+            <div class="chat-history-list" id="chatHistoryList">
+                <div class="no-chats-message">Belum ada riwayat percakapan</div>
+            </div>
+            
+            <div class="language-toggle-wrapper">
+                <label class="lang-label" id="langLabel">ID</label>
+                <label class="switch">
+                  <input type="checkbox" id="languageToggle">
+                  <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="welcome-state" id="welcomeState">
+            <svg class="stad-sparkle" viewBox="0 0 24 24" width="60" height="60">
+                <defs>
+                    <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4285f4"/>
+                        <stop offset="100%" style="stop-color:#34a853"/>
+                    </linearGradient>
+                </defs>
+                <path fill="url(#sparkleGradient)" d="M12 0L13.5 8.5L22 10L13.5 11.5L12 20L10.5 11.5L2 10L10.5 8.5L12 0Z"/>
+                <path fill="url(#sparkleGradient)" d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z"/>
+                <path fill="url(#sparkleGradient)" d="M5 15L5.5 17L7 17.5L5.5 18L5 20L4.5 18L3 17.5L4.5 17L5 15Z"/>
+            </svg>
+            <small>Assalamualaikum,</small>
+            <p class="welcome-text">Ada yang bisa saya bantu tentang Al-Quran?</p>
+            </div>
+
+        <div class="chat-container" id="chatContainer"></div>
+    </main>
+
+    <div class="input-area" id="inputArea">
+        <div class="input-wrapper">
+            <div class="input-field">
+                <textarea placeholder="Tanyakan tentang Al-Quran..." id="messageInput" rows="1"></textarea>
+            </div>
+            <div class="input-actions">
+                <div class="left-actions">
+    <button class="verse-btn" id="selectVerseBtn" title="Pilih Ayat">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M19 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h13v16H6V4zm2 10h9v2H8v-2zm0-3h9v2H8v-2zm0-3h9v2H8V8z"/>
+        </svg>
+    </button>
+</div>
+
+<div class="action-sheet-overlay" id="actionSheetOverlay"></div>
+<div class="action-sheet" id="actionSheet">
+    <div class="action-sheet-header">
+        <div class="action-sheet-title">Pilih Ayat Al-Quran</div>
+        <button class="close-action-sheet" id="closeActionSheet">&times;</button>
+    </div>
+    <div class="action-sheet-body">
+        <div class="verse-selection-controls">
+            <label for="surahSelect">Surah:</label>
+            <select id="surahSelect" class="styled-select"></select>
+            <label for="verseSelect">Ayat:</label>
+            <select id="verseSelect" class="styled-select"></select>
+        </div>
+        <button class="select-verse-btn" id="goVerseBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            Tampilkan Ayat
+        </button>
+    </div>
+</div>
+
+                <div class="right-actions">
+                    <button class="wave-btn" id="waveBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/>
+                        </svg>
+                    </button>
+                    
+                    <button class="send-btn" id="sendBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WORKER_URL = 'https://ai-quran-workers.harisudahmalam.workers.dev'; 
+        const SURAH_API_URL = 'https://api.alquran.cloud/v1/surah';
+        const TRANSLATION_LANG = 'id.indonesian'; 
+        const ARABIC_FONT = 'quran-uthmani'; 
+
+        let currentChatId = null;
+        let chatHistory = [];
+        let isFirstMessage = true;
+        let currentLanguage = 'id';
+        let SURAH_DATA = []; 
+        let SURAH_MAP = new Map(); 
+
+        const chatContainer = document.getElementById('chatContainer');
+        const inputArea = document.getElementById('inputArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const waveBtn = document.getElementById('waveBtn');
+        const welcomeState = document.getElementById('welcomeState');
+        const menuIcon = document.getElementById('menuIcon');
+        const offcanvasOverlay = document.getElementById('offcanvasOverlay');
+        const offcanvasSidebar = document.getElementById('offcanvasSidebar');
+        const closeOffcanvas = document.getElementById('closeOffcanvas');
+        const chatHistoryList = document.getElementById('chatHistoryList');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const languageToggle = document.getElementById('languageToggle');
+        const langLabel = document.getElementById('langLabel');
+        const chatTitle = document.getElementById('chatTitle'); 
+
+        const selectVerseBtn = document.getElementById('selectVerseBtn');
+        const actionSheetOverlay = document.getElementById('actionSheetOverlay');
+        const actionSheet = document.getElementById('actionSheet');
+        const closeActionSheet = document.getElementById('closeActionSheet');
+        const surahSelect = document.getElementById('surahSelect');
+        const verseSelect = document.getElementById('verseSelect');
+        const goVerseBtn = document.getElementById('goVerseBtn');
+
+        function init() {
+            setupEventListeners(); 
+            loadHistory();
+            loadAllSurahs(); 
+
+            updateSendButtonState();
+
+            if (currentChatId === null || chatHistory.length === 0 || chatHistory.find(c => c.id === currentChatId)?.messages.length === 0) {
+                welcomeState.classList.remove('hidden');
+                chatContainer.classList.remove('active');
+                inputArea.classList.remove('chat-mode');
+                isFirstMessage = true;
+            } else {
+                welcomeState.classList.add('hidden');
+                chatContainer.classList.add('active');
+                inputArea.classList.add('chat-mode');
+                isFirstMessage = false;
+            }
+
+            if(currentLanguage === 'en') {
+                 languageToggle.checked = true;
+            }
+
+            langLabel.textContent = currentLanguage === 'id' ? 'ID' : 'EN';
+        }
+
+        function scrollToBottom() {
+
+    if (!chatContainer) return;
+
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+            const last = chatContainer.lastElementChild;
+            if (last) {
+
+                try {
+                    last.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
+                } catch (err) {
+
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            } else {
+
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+    });
+}
+
+        async function loadAllSurahs() {
+            try {
+
+                const response = await fetch(`${WORKER_URL}/api/surah`);
+                if (!response.ok) throw new Error('Failed to load surah list.');
+
+                const data = await response.json();
+                SURAH_DATA = data;
+
+                SURAH_DATA.forEach(surah => {
+                    SURAH_MAP.set(surah.id, {
+                        name: surah.transliteration || surah.name,
+                        name_id: surah.name, 
+
+                        ayahs: surah.total_verses,
+                        translation: surah.translation
+                    });
+                });
+
+                if (actionSheet.classList.contains('active')) {
+                    populateSurahSelect();
+                    populateVerseSelect();
+                }
+
+            } catch (error) {
+                console.error("Error loading surah list:", error);
+
+                try {
+                    const response = await fetch(SURAH_API_URL);
+                    const data = await response.json();
+                    SURAH_DATA = data.data;
+
+                    SURAH_DATA.forEach(surah => {
+                        SURAH_MAP.set(surah.number, {
+                            name: surah.englishName,
+                            name_id: surah.name,
+                            ayahs: surah.numberOfAyahs,
+                            translation: surah.englishNameTranslation
+                        });
+                    });
+                } catch (fallbackError) {
+                    console.error("Fallback also failed:", fallbackError);
+                }
+            }
+        }
+
+        function openActionSheet() {
+            actionSheetOverlay.classList.add('active');
+            actionSheet.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            if (SURAH_DATA.length > 0) {
+                populateSurahSelect();
+                populateVerseSelect();
+            } else {
+                surahSelect.innerHTML = `<option>${currentLanguage === 'id' ? 'Memuat Surah...' : 'Loading Surahs...'}</option>`;
+                verseSelect.innerHTML = `<option>-</option>`;
+                loadAllSurahs(); 
+
+            }
+        }
+
+        function closeActionSheetMenu() {
+            actionSheetOverlay.classList.remove('active');
+            actionSheet.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function populateSurahSelect() {
+            surahSelect.innerHTML = '';
+            if (SURAH_DATA.length === 0) return;
+
+            SURAH_DATA.forEach(surah => {
+                const option = document.createElement('option');
+
+                option.value = surah.id || surah.number;
+
+                const displayName = currentLanguage === 'id' 
+                    ? (surah.translation || surah.englishNameTranslation || surah.name)
+                    : (surah.transliteration || surah.englishName || surah.name);
+                option.textContent = `${surah.id || surah.number}. ${displayName} (${surah.name})`;
+                surahSelect.appendChild(option);
+            });
+
+            populateVerseSelect(); 
+        }
+
+        function populateVerseSelect() {
+            const selectedSurahId = parseInt(surahSelect.value);
+            const selectedSurah = SURAH_MAP.get(selectedSurahId);
+
+            verseSelect.innerHTML = '';
+
+            if (selectedSurah) {
+                for (let i = 1; i <= selectedSurah.ayahs; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = currentLanguage === 'id' ? `Ayat ${i}` : `Verse ${i}`;
+                    verseSelect.appendChild(option);
+                }
+            }
+        }
+
+        async function getSpecificVerse() {
+        const surahNumber = surahSelect.value;
+        const ayahNumber = parseInt(verseSelect.value);
+
+        if (!surahNumber || !ayahNumber) return;
+
+        closeActionSheetMenu();
+
+        const surahInfo = SURAH_MAP.get(parseInt(surahNumber));
+
+        if (!surahInfo) {
+            showError(currentLanguage === 'id' 
+                ? `Data surah tidak ditemukan.`
+                : `Surah data not found.`);
+            return;
+        }
+
+        const userMsg = currentLanguage === 'id' 
+            ? ` ${surahInfo.name} ayat ${ayahNumber}`
+            : `Show ${surahInfo.name} verse ${ayahNumber}`;
+
+        const userMsgEl = document.createElement('div');
+        userMsgEl.className = 'user-message';
+        userMsgEl.textContent = userMsg;
+        chatContainer.appendChild(userMsgEl);
+
+        if (isFirstMessage) {
+            welcomeState.classList.add('hidden');
+            chatContainer.classList.add('active');
+            inputArea.classList.add('chat-mode');
+            isFirstMessage = false;
+            if (currentChatId === null) {
+                createNewChat(false);
+            }
+        }
+
+        const typingEl = createTypingIndicator();
+        chatContainer.appendChild(typingEl);
+        scrollToBottom();
+
+        try {
+
+            const [arabicResponse, translationResponse] = await Promise.all([
+                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`).then(r => {
+                    if (!r.ok) throw new Error(`Arabic API failed: ${r.status}`);
+                    return r.json();
+                }),
+                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`).then(r => {
+                    if (!r.ok) throw new Error(`Translation API failed: ${r.status}`);
+                    return r.json();
+                })
+            ]);
+
+            console.log('Arabic surah response:', arabicResponse);
+            console.log('Translation surah response:', translationResponse);
+
+            if (arabicResponse.code !== 200 || !arabicResponse.data || !arabicResponse.data.ayahs) {
+                throw new Error('Invalid Arabic surah data');
+            }
+
+            if (translationResponse.code !== 200 || !translationResponse.data || !translationResponse.data.ayahs) {
+                throw new Error('Invalid translation surah data');
+            }
+
+            const arabicSurah = arabicResponse.data;
+            const translationSurah = translationResponse.data;
+
+            const arabicAyah = arabicSurah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+            const translationAyah = translationSurah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+
+            if (!arabicAyah) {
+                throw new Error(`Arabic verse ${ayahNumber} not found in surah ${surahNumber}`);
+            }
+
+            typingEl.remove();
+
+            const aiResponse = {
+                surahNumber: surahNumber,
+                surahName: arabicSurah.englishName || surahInfo.name,
+                surahNameArabic: arabicSurah.name,
+                ayahNumber: ayahNumber,
+                arabicText: arabicAyah.text,
+                translationText: translationAyah ? translationAyah.text : 
+                    (currentLanguage === 'id' ? 'Terjemahan tidak tersedia' : 'Translation not available')
+            };
+
+            console.log('AI Response:', aiResponse);
+
+            displayAIResponse(userMsg, aiResponse, 'verse');
+
+        } catch (error) {
+            console.error('Error getting verse from surah API:', error);
+
+            typingEl.remove();
+
+            try {
+                await getSingleVerseFallback(surahNumber, ayahNumber, surahInfo, userMsg);
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+
+                showError(currentLanguage === 'id' 
+                    ? `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${error.message}`
+                    : `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${error.message}`);
+            }
+        }
+    }
+
+    async function getSingleVerseFallback(surahNumber, ayahNumber, surahInfo, userMsg) {
+        console.log(`Trying single verse API for ${surahNumber}:${ayahNumber}...`);
+
+        try {
+
+            const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}`);
+
+            if (!response.ok) {
+                throw new Error(`Single verse API failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Single verse response:', data);
+
+            if (data.code !== 200 || !data.data) {
+                throw new Error('Invalid single verse response');
+            }
+
+            const typingEl = document.querySelector('.typing-indicator');
+            if (typingEl) typingEl.remove();
+
+            const aiResponse = {
+                surahNumber: surahNumber,
+                surahName: surahInfo.name,
+                ayahNumber: ayahNumber,
+                arabicText: data.data.text || 'Teks tidak tersedia',
+                translationText: data.data.translation || 
+                    (currentLanguage === 'id' ? 'Terjemahan tidak tersedia' : 'Translation not available')
+            };
+
+            displayAIResponse(userMsg, aiResponse, 'verse');
+
+        } catch (error) {
+            throw error; 
+
+        }
+        scrollToBottom();
+    }
+
+    function displayAIResponse(userMessage, aiResponse, type) {
+        const aiResponseEl = document.createElement('div');
+        aiResponseEl.className = 'ai-response';
+
+        if (type === 'verse') {
+            let html = `
+                <div class="verse-header">
+                    <span class="surah-title">${aiResponse.surahNameArabic || aiResponse.surahName} (${aiResponse.surahNumber}:${aiResponse.ayahNumber})</span>
+                </div>
+                <div class="arabic-text" dir="rtl">
+                    ${aiResponse.arabicText}
+                </div>
+                <div class="translation-text">
+                    ${currentLanguage === 'id' ? 'Terjemahan:' : 'Translation:'} ${aiResponse.translationText}
+                </div>
+            `;
+            aiResponseEl.innerHTML = html;
+        } else if (type === 'error') {
+            aiResponseEl.classList.add('error-message');
+            aiResponseEl.textContent = aiResponse;
+        } else {
+
+            aiResponseEl.innerHTML = `<div class="ai-text">${aiResponse}</div>`;
+        }
+
+        chatContainer.appendChild(aiResponseEl);
+
+        saveChatToHistory(userMessage, aiResponse, type);
+        scrollToBottom();
+    }
+
+    async function fetchVerseFromExternalAPI(surahNumber, ayahNumber, surahInfo, userMsg) {
+        try {
+            const [arabicResponse, translationResponse] = await Promise.all([
+                fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}/${ARABIC_FONT}`).then(r => r.json()),
+                fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}/${TRANSLATION_LANG}`).then(r => r.json())
+            ]);
+
+            if (!arabicResponse.data || !arabicResponse.data.text) {
+                throw new Error('Arabic text not found');
+            }
+
+            const arabicText = arabicResponse.data.text;
+            const translationText = translationResponse.data?.text || 
+                                   (currentLanguage === 'id' ? 'Terjemahan tidak tersedia' : 'Translation not available');
+
+            const typingEl = document.querySelector('.typing-indicator');
+            if (typingEl) typingEl.remove();
+
+            const aiResponse = {
+                surahNumber: surahNumber,
+                surahName: surahInfo.name,
+                ayahNumber: ayahNumber,
+                arabicText: arabicText,
+                translationText: translationText
+            };
+
+            displayAIResponse(userMsg, aiResponse, 'verse');
+
+        } catch (error) {
+            console.error('External API failed:', error);
+            throw error; 
+
+        }
+        scrollToBottom();
+    }
+
+        function loadHistory() {
+            const history = localStorage.getItem('quranChatHistory');
+
+            try {
+                if (history) {
+                    chatHistory = JSON.parse(history);
+                }
+            } catch (e) {
+                console.error("Error parsing chat history:", e);
+                chatHistory = [];
+                localStorage.removeItem('quranChatHistory'); 
+
+            }
+
+            if (chatHistory.length > 0) {
+
+                 loadChat(chatHistory[0].id);
+            } else {
+
+                 currentChatId = null;
+                 renderChatHistory(); 
+
+            }
+            scrollToBottom();
+        }
+
+        function createNewChat(shouldLoad = true) {
+            const newChat = {
+                id: Date.now(),
+                title: currentLanguage === 'id' ? 'Obrolan Baru' : 'New Chat',
+                messages: []
+            };
+
+            chatHistory.unshift(newChat);
+            localStorage.setItem('quranChatHistory', JSON.stringify(chatHistory));
+
+            if (shouldLoad) {
+                loadChat(newChat.id);
+            }
+            renderChatHistory();
+            closeOffcanvasMenu();
+        }
+
+        function loadChat(chatId) {
+            const chat = chatHistory.find(c => c.id === chatId);
+            if (!chat) return;
+
+            currentChatId = chatId;
+
+            chatContainer.innerHTML = '';
+
+            if (chat.messages.length === 0) {
+                isFirstMessage = true;
+                welcomeState.classList.remove('hidden');
+                chatContainer.classList.remove('active');
+                inputArea.classList.remove('chat-mode');
+            } else {
+                isFirstMessage = false;
+                welcomeState.classList.add('hidden');
+                chatContainer.classList.add('active');
+                inputArea.classList.add('chat-mode');
+
+                chat.messages.forEach(message => {
+
+                    const userMsgEl = document.createElement('div');
+                    userMsgEl.className = 'user-message';
+                    userMsgEl.textContent = message.user;
+                    chatContainer.appendChild(userMsgEl);
+
+                    if (message.type === 'verse') {
+                        const aiData = message.ai;
+                        const aiResponseEl = document.createElement('div');
+                        aiResponseEl.className = 'ai-response';
+
+                        let html = `
+                            <div class="verse-header">
+                                <span class="surah-title">${aiData.surahName} : ${aiData.ayahNumber}</span>
+                            </div>
+                            <div class="arabic-text" dir="rtl">
+                                ${aiData.arabicText}
+                            </div>
+                            <div class="translation-text">
+                                ${currentLanguage === 'id' ? 'Terjemahan:' : 'Translation:'} ${aiData.translationText}
+                            </div>
+                        `;
+                        aiResponseEl.innerHTML = html;
+                        chatContainer.appendChild(aiResponseEl);
+                    } else if (message.type === 'error') {
+                         const errorEl = document.createElement('div');
+                         errorEl.className = 'ai-response error-message';
+                         errorEl.textContent = message.ai;
+                         chatContainer.appendChild(errorEl);
+                    } else if (message.type === 'quran_ai') {
+
+                        displayBackendAIResponse(message.user, message.ai, false);
+                    }
+                });
+            }
+
+            renderChatHistory();
+            closeOffcanvasMenu();
+            scrollToBottom(); 
+
+            const currentChat = chatHistory.find(c => c.id === currentChatId);
+            chatTitle.innerHTML = `${currentChat ? currentChat.title : (currentLanguage === 'id' ? 'Obrolan Baru' : 'New Chat')}`;
+        }
+
+        function renderChatHistory() {
+            chatHistoryList.innerHTML = '';
+
+            if (chatHistory.length === 0) {
+                chatHistoryList.innerHTML = `<div class="no-chats-message">${currentLanguage === 'id' ? 'Belum ada riwayat percakapan' : 'No chat history yet.'}</div>`;
+                chatTitle.innerHTML = `<span class="logo-icon">stad</span> AI`;
+                return;
+            }
+
+            chatHistory.forEach(chat => {
+                const item = document.createElement('div');
+                item.className = 'chat-history-item';
+                if (chat.id === currentChatId) {
+                    item.classList.add('active');
+                }
+                item.setAttribute('data-chat-id', chat.id);
+                item.addEventListener('click', () => loadChat(chat.id));
+
+                const chatPreview = document.createElement('div');
+                chatPreview.className = 'chat-preview';
+
+                const titleEl = document.createElement('div');
+                titleEl.className = 'chat-preview-title';
+                titleEl.textContent = chat.title;
+
+                chatPreview.appendChild(titleEl);
+                item.appendChild(chatPreview);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-chat-btn';
+                deleteBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    deleteChat(chat.id);
+                });
+
+                item.appendChild(deleteBtn);
+                chatHistoryList.appendChild(item);
+
+                if (chat.id === currentChatId) {
+                    chatTitle.innerHTML = `${chat.title}`;
+                }
+            });
+        }
+
+        function deleteChat(chatId) {
+            if (confirm(currentLanguage === 'id'
+                ? 'Apakah Anda yakin ingin menghapus percakapan ini?'
+                : 'Are you sure you want to delete this conversation?')) {
+
+                const wasActiveChat = currentChatId === chatId;
+                chatHistory = chatHistory.filter(chat => chat.id !== chatId);
+
+                localStorage.setItem('quranChatHistory', JSON.stringify(chatHistory));
+
+                if (wasActiveChat) {
+                    if (chatHistory.length > 0) {
+
+                        loadChat(chatHistory[0].id);
+                    } else {
+
+                        currentChatId = null;
+                        chatContainer.innerHTML = '';
+                        welcomeState.classList.remove('hidden');
+                        chatContainer.classList.remove('active');
+                        inputArea.classList.remove('chat-mode');
+                        isFirstMessage = true;
+                        renderChatHistory();
+                    }
+                } else {
+
+                    renderChatHistory();
+                }
+            }
+        }
+
+        function createTypingIndicator() {
+            const typingEl = document.createElement('div');
+            typingEl.className = 'ai-response typing-indicator';
+            typingEl.innerHTML = `
+            <div class="typing-indicator">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            `;
+            return typingEl;
+        }
+
+        function showError(message) {
+            const errorEl = document.createElement('div');
+            errorEl.className = 'ai-response error-message';
+            errorEl.textContent = message;
+            chatContainer.appendChild(errorEl);
+            scrollToBottom();
+
+            saveChatToHistory('System', message, 'error');
+        }
+
+        function saveChatToHistory(userMessage, aiResponse, type = 'text') {
+            let currentChat = chatHistory.find(c => c.id === currentChatId);
+
+            if (!currentChat) {
+                createNewChat(false); 
+
+                currentChat = chatHistory[0]; 
+
+                currentChatId = currentChat.id;
+            }
+
+            if (currentChat.messages.length === 0) {
+                const title = type === 'verse' 
+                    ? userMessage 
+                    : userMessage.split(/\s+/).slice(0, 5).join(' ') + (userMessage.split(/\s+/).length > 5 ? '...' : '');
+                currentChat.title = title;
+
+                chatTitle.innerHTML = `${currentChat.title}`;
+            }
+
+            currentChat.messages.push({
+                user: userMessage,
+                ai: aiResponse,
+                type: type 
+            });
+
+            chatHistory = chatHistory.filter(c => c.id !== currentChatId);
+            chatHistory.unshift(currentChat);
+
+            localStorage.setItem('quranChatHistory', JSON.stringify(chatHistory));
+            renderChatHistory();
+        }
+
+        async function sendMessage() {
+            const userMessage = messageInput.value.trim();
+            if (userMessage === '') return;
+
+            messageInput.value = '';
+            messageInput.style.height = 'auto'; 
+            updateSendButtonState(); 
+
+            const userMsgEl = document.createElement('div');
+            userMsgEl.className = 'user-message';
+            userMsgEl.textContent = userMessage;
+            chatContainer.appendChild(userMsgEl);
+
+            if (isFirstMessage) {
+                welcomeState.classList.add('hidden');
+                chatContainer.classList.add('active');
+                inputArea.classList.add('chat-mode');
+                isFirstMessage = false;
+
+                if (currentChatId === null) {
+                    createNewChat(false);
+                }
+            }
+
+            const typingEl = createTypingIndicator();
+            chatContainer.appendChild(typingEl);
+            scrollToBottom(); 
+
+            try {
+
+                const response = await fetch(`${WORKER_URL}/api/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: userMessage,
+                        language: currentLanguage
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                typingEl.remove();
+
+                displayBackendAIResponse(userMessage, data, true);
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                typingEl.remove();
+                const errorMessage = currentLanguage === 'id' 
+                    ? 'Terjadi kesalahan saat memproses respons. Silakan coba lagi.'
+                    : 'An error occurred while processing the response. Please try again.';
+
+                showError(errorMessage);
+            }
+        }
+
+        function displayBackendAIResponse(userMessage, backendResponse, saveToHistory = true) {
+            const aiResponseEl = document.createElement('div');
+            aiResponseEl.className = 'ai-response';
+
+            let answerHtml = '';
+
+            if (backendResponse.success) {
+
+                answerHtml += `<div class="ai-text">${backendResponse.answer}</div>`;
+
+                if (backendResponse.verses_data && backendResponse.verses_data.length > 0) {
+                    answerHtml += `<div class="verses-section" style="margin-top: 1rem;">`;
+                    backendResponse.verses_data.forEach(verse => {
+                        answerHtml += `
+                            <div class="verse-container">
+                                <div class="verse-reference">${verse.reference}</div>
+                                <div class="arabic-text" dir="rtl">${verse.verse_arabic}</div>
+                                <div class="translation-text">${verse.verse_translation}</div>
+                            </div>
+                        `;
+                    });
+                    answerHtml += `</div>`;
+                }
+
+                if (backendResponse.disclaimer) {
+                    answerHtml += `<div class="disclaimer">${backendResponse.disclaimer}</div>`;
+                }
+
+                if (backendResponse.usage) {
+                    const usage = backendResponse.usage;
+                    answerHtml += `
+                        <div class="usage-info">
+                            <div class="usage-section">
+                                <div class="usage-title">${currentLanguage === 'id' ? 'Penggunaan Token' : 'Token Usage'}</div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Input' : 'Input'}</span>
+                                    <span class="usage-value">${usage.tokens.input}</span>
+                                </div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Output' : 'Output'}</span>
+                                    <span class="usage-value">${usage.tokens.output}</span>
+                                </div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Total' : 'Total'}</span>
+                                    <span class="usage-value">${usage.tokens.total}</span>
+                                </div>
+                            </div>
+
+                            <div class="usage-section">
+                                <div class="usage-title">${currentLanguage === 'id' ? 'Neuron Usage' : 'Neuron Usage'}</div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Digunakan' : 'Consumed'}</span>
+                                    <span class="usage-value">${usage.neurons.formatted} neurons</span>
+                                </div>
+
+                            </div>
+                        </div>
+                    `;
+                }
+
+            } else {
+
+                answerHtml += `<div class="error-message">${backendResponse.error || 'Terjadi kesalahan'}</div>`;
+
+                if (backendResponse.verses_data && backendResponse.verses_data.length > 0) {
+                    answerHtml += `<div class="ai-text">${backendResponse.answer || ''}</div>`;
+                    answerHtml += `<div class="verses-section" style="margin-top: 1rem;">`;
+                    backendResponse.verses_data.forEach(verse => {
+                        answerHtml += `
+                            <div class="verse-container">
+                                <div class="verse-reference">${verse.reference}</div>
+                                <div class="arabic-text" dir="rtl">${verse.verse_arabic}</div>
+                                <div class="translation-text">${verse.verse_translation}</div>
+                            </div>
+                        `;
+                    });
+                    answerHtml += `</div>`;
+                }
+
+                if (backendResponse.limit_info) {
+                    answerHtml += `
+                        <div class="usage-info">
+                            <div class="usage-section">
+                                <div class="usage-title">${currentLanguage === 'id' ? 'Batas Harian' : 'Daily Limit'}</div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Digunakan' : 'Consumed'}</span>
+                                    <span class="usage-value">${formatNeuronsDisplay(backendResponse.limit_info.consumed)}</span>
+                                </div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Tersisa' : 'Remaining'}</span>
+                                    <span class="usage-value">${formatNeuronsDisplay(backendResponse.limit_info.remaining)}</span>
+                                </div>
+                                <div class="usage-detail">
+                                    <span class="usage-label">${currentLanguage === 'id' ? 'Batas Harian' : 'Daily Limit'}</span>
+                                    <span class="usage-value">${formatNeuronsDisplay(backendResponse.limit_info.daily_limit)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            aiResponseEl.innerHTML = answerHtml;
+            chatContainer.appendChild(aiResponseEl);
+
+            if (saveToHistory) {
+                saveChatToHistory(userMessage, backendResponse, 'quran_ai');
+            }
+
+            scrollToBottom();
+        }
+
+        function formatNeuronsDisplay(neurons) {
+            if (neurons < 1000) {
+                return neurons.toFixed(2) + ' neurons';
+            } else if (neurons < 1000000) {
+                return (neurons / 1000).toFixed(2) + 'k neurons';
+            } else {
+                return (neurons / 1000000).toFixed(4) + 'M neurons';
+            }
+        }
+
+        function updateSendButtonState() {
+            if (messageInput.value.trim().length > 0) {
+                sendBtn.classList.add('visible');
+                waveBtn.classList.add('hidden');
+            } else {
+                sendBtn.classList.remove('visible');
+                waveBtn.classList.remove('hidden');
+            }
+        }
+
+        function setupEventListeners() {
+            sendBtn.addEventListener('click', sendMessage);
+
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            messageInput.addEventListener('input', () => {
+
+                messageInput.style.height = 'auto';
+                messageInput.style.height = (messageInput.scrollHeight) + 'px';
+                updateSendButtonState(); 
+
+            });
+
+            menuIcon.addEventListener('click', openOffcanvasMenu);
+            offcanvasOverlay.addEventListener('click', closeOffcanvasMenu);
+            closeOffcanvas.addEventListener('click', closeOffcanvasMenu);
+            newChatBtn.addEventListener('click', createNewChat);
+
+            languageToggle.addEventListener('change', toggleLanguage);
+
+            selectVerseBtn.addEventListener('click', openActionSheet);
+            closeActionSheet.addEventListener('click', closeActionSheetMenu);
+            actionSheetOverlay.addEventListener('click', closeActionSheetMenu);
+            surahSelect.addEventListener('change', populateVerseSelect);
+            goVerseBtn.addEventListener('click', getSpecificVerse);
+        }
+
+        function toggleLanguage() {
+
+            currentLanguage = languageToggle.checked ? 'en' : 'id';
+
+            langLabel.textContent = currentLanguage === 'id' ? 'ID' : 'EN';
+
+            document.documentElement.lang = currentLanguage;
+
+            if (chatHistory.length > 0) {
+                loadChat(currentChatId); 
+            } else {
+                renderChatHistory(); 
+
+                welcomeState.querySelector('.welcome-text').textContent = currentLanguage === 'id'
+                    ? 'Ada yang bisa saya bantu tentang Al-Quran?'
+                    : 'How can I help you regarding the Quran?';
+            }
+
+            messageInput.placeholder = currentLanguage === 'id' 
+                ? 'Tanyakan tentang Al-Quran...' 
+                : 'Ask about the Quran...';
+        }
+
+        function openOffcanvasMenu() {
+            offcanvasOverlay.classList.add('active');
+            offcanvasSidebar.classList.add('active');
+            menuIcon.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOffcanvasMenu() {
+            offcanvasOverlay.classList.remove('active');
+            offcanvasSidebar.classList.remove('active');
+            menuIcon.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
