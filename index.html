@@ -1780,9 +1780,8 @@
             </div>
         </div>
     </div>
-
 <script>
-  // Quran AI Chat Application
+  // Quran AI Chat Application - FIXED VERSION
 // ===============================================
 
 // Constants
@@ -1850,10 +1849,6 @@ class DomElements {
         this.voiceOffcanvasOverlay = document.getElementById('voiceOffcanvasOverlay');
         this.offcanvasVoice = document.getElementById('offcanvasVoice');
         this.closeOffcanvasVoice = document.getElementById('closeOffcanvasVoice');
-        this.startRecordingBtn = document.getElementById('startRecordingBtn');
-        this.stopRecordingBtn = document.getElementById('stopRecordingBtn');
-        this.recordingStatus = document.getElementById('recordingStatus');
-        this.waveAnimation = document.getElementById('waveAnimation');
         
         // Chat History Elements
         this.chatHistoryList = document.getElementById('chatHistoryList');
@@ -1965,36 +1960,13 @@ class ApiService {
             throw error;
         }
     }
-
-    static async sendAudio(audioBlob, language) {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        formData.append('language', language);
-
-        try {
-            const response = await fetch('/api/voice-ask', {
-                method: 'POST',
-                body: formData
-            });
-
-            return await response.json();
-        } catch (error) {
-            console.error('Audio API failed:', error);
-            throw error;
-        }
-    }
 }
 
 // Chat Manager
 class ChatManager {
-    constructor(state, dom, aiHandler) {
+    constructor(state, dom) {
         this.state = state;
         this.dom = dom;
-        this.aiHandler = aiHandler;
-        this.verseManager = null;
-    }
-    setVerseManager(verseManager) {
-        this.verseManager = verseManager;
     }
 
     createNewChat(shouldLoad = true) {
@@ -2029,7 +2001,14 @@ class ChatManager {
             this.showWelcomeState();
         } else {
             this.hideWelcomeState();
-            this.renderChatMessages(chat.messages);
+            chat.messages.forEach(message => {
+                if (message.type === 'verse') {
+                    this.displayVerseResponse(message.ai);
+                } else {
+                    this.appendUserMessage(message.user);
+                    this.appendAIResponse(message.ai);
+                }
+            });
         }
 
         this.renderChatHistory();
@@ -2037,45 +2016,45 @@ class ChatManager {
         this.scrollToBottom();
     }
 
-    renderChatMessages(messages) {
-    messages.forEach(message => {
-
-        this.appendUserMessage(message.user);
-
-        if (message.type === 'verse') {
-            this.displayVerseResponse(message.ai, false);
-        } else if (message.type === 'error') {
-            this.showError(message.ai);
-        } else if (message.type === 'quran_ai') {
-
-            if (this.aiHandler) {
-                this.aiHandler.displayBackendAIResponse(message.user, message.ai, false);
-            } else {
-
-                this.appendAIResponse(typeof message.ai === 'string' 
-                    ? message.ai 
-                    : (message.ai.answer || JSON.stringify(message.ai)));
-            }
-        } else {
-
-            this.appendAIResponse(message.ai);
-        }
-    });
-
-    this.scrollToBottom();
-}
-
     appendUserMessage(text) {
         const messageEl = this.createMessageElement('user-message', text);
         this.dom.chatContainer.appendChild(messageEl);
     }
 
-    appendAIResponse(text, options = {}) {
-        const responseEl = this.createMessageElement('ai-response', text);
-        if (options.isError) {
-            responseEl.classList.add('error-message');
-        }
+    appendAIResponse(text) {
+        const responseEl = document.createElement('div');
+        responseEl.className = 'ai-response';
+        responseEl.innerHTML = `<div class="ai-text">${text}</div>`;
         this.dom.chatContainer.appendChild(responseEl);
+    }
+
+    displayVerseResponse(verseData) {
+        const responseEl = document.createElement('div');
+        responseEl.className = 'ai-response';
+        
+        const html = `
+            <div class="verse-header">
+                <span class="surah-title">${verseData.surahNameArabic || verseData.surahName} (${verseData.surahNumber}:${verseData.ayahNumber})</span>
+            </div>
+            <div class="arabic-text" dir="rtl">
+                ${verseData.arabicText}
+            </div>
+            <div class="translation-text">
+                ${this.getLocalizedText('Translation:', 'Terjemahan:')} ${verseData.translationText}
+            </div>
+        `;
+        
+        responseEl.innerHTML = html;
+        this.dom.chatContainer.appendChild(responseEl);
+        this.scrollToBottom();
+    }
+
+    showError(message) {
+        const errorEl = document.createElement('div');
+        errorEl.className = 'ai-response error-message';
+        errorEl.textContent = message;
+        this.dom.chatContainer.appendChild(errorEl);
+        this.scrollToBottom();
     }
 
     createMessageElement(className, text) {
@@ -2087,12 +2066,12 @@ class ChatManager {
 
     showTypingIndicator() {
         const typingEl = document.createElement('div');
-        typingEl.className = 'ai-response typing-indicator';
+        typingEl.className = 'ai-response';
         typingEl.innerHTML = `
             <div class="typing-indicator">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         `;
         this.dom.chatContainer.appendChild(typingEl);
@@ -2103,7 +2082,7 @@ class ChatManager {
     removeTypingIndicator() {
         const typingEl = this.dom.chatContainer.querySelector('.typing-indicator');
         if (typingEl) {
-            typingEl.remove();
+            typingEl.parentElement.remove();
         }
     }
 
@@ -2128,14 +2107,10 @@ class ChatManager {
     }
     
     scrollToBottom() {
-        if (!this.dom.chatContainer) return;
-        
         setTimeout(() => {
-            const container = this.dom.chatContainer;
-            container.scrollTop = container.scrollHeight;
-            requestAnimationFrame(() => {
-                container.scrollTop = container.scrollHeight;
-            });
+            if (this.dom.chatContainer) {
+                this.dom.chatContainer.scrollTop = this.dom.chatContainer.scrollHeight;
+            }
         }, 10);
     }
 
@@ -2159,7 +2134,6 @@ class ChatManager {
         } catch (error) {
             console.error('Failed to load from localStorage:', error);
             this.state.chatHistory = [];
-            localStorage.removeItem(Constants.LOCAL_STORAGE_KEY);
         }
     }
 
@@ -2224,11 +2198,10 @@ class ChatManager {
             } else {
                 this.state.reset();
                 this.showWelcomeState();
-                this.renderChatHistory();
             }
-        } else {
-            this.renderChatHistory();
         }
+        
+        this.renderChatHistory();
     }
 
     saveMessageToHistory(userMessage, aiResponse, type = 'text') {
@@ -2240,9 +2213,7 @@ class ChatManager {
         }
 
         if (currentChat.messages.length === 0) {
-            const title = type === 'verse' 
-                ? userMessage 
-                : userMessage.split(/\s+/).slice(0, 5).join(' ') + (userMessage.split(/\s+/).length > 5 ? '...' : '');
+            const title = userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '');
             currentChat.title = title;
             this.updateChatTitle(title);
         }
@@ -2254,7 +2225,6 @@ class ChatManager {
             timestamp: new Date().toISOString()
         });
 
-        // Move to top of history
         this.state.chatHistory = this.state.chatHistory.filter(c => c.id !== currentChat.id);
         this.state.chatHistory.unshift(currentChat);
 
@@ -2295,134 +2265,13 @@ class VerseManager {
         this.chatManager = chatManager;
     }
 
-    async loadFullSurah(surahNumber) {
-        try {
-            const response = await fetch(`${Constants.WORKER_URL}/api/surah/${surahNumber}/full`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data) {
-                return result.data;
-            } else {
-                throw new Error(result.error || 'Invalid response format');
-            }
-        } catch (error) {
-            console.error(`Error loading surah ${surahNumber}:`, error);
-            
-            // Fallback langsung ke API alquran.cloud
-            try {
-                console.log('Trying direct API call as fallback...');
-                const [arabicRes, translationRes] = await Promise.all([
-                    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`),
-                    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`)
-                ]);
-                
-                if (!arabicRes.ok || !translationRes.ok) {
-                    throw new Error(`Direct API failed: ${arabicRes.status}, ${translationRes.status}`);
-                }
-                
-                const arabicData = await arabicRes.json();
-                const translationData = await translationRes.json();
-                
-                return {
-                    id: arabicData.data.number,
-                    name: arabicData.data.name,
-                    englishName: arabicData.data.englishName,
-                    englishNameTranslation: arabicData.data.englishNameTranslation,
-                    revelationType: arabicData.data.revelationType,
-                    numberOfAyahs: arabicData.data.numberOfAyahs,
-                    ayahs: arabicData.data.ayahs.map((ayah, index) => ({
-                        numberInSurah: ayah.numberInSurah,
-                        arabic: ayah.text,
-                        translation: translationData.data.ayahs[index]?.text || 'Terjemahan tidak tersedia'
-                    }))
-                };
-            } catch (directError) {
-                console.error('Direct API fallback juga gagal:', directError);
-                throw new Error(`Gagal memuat surah ${surahNumber}: ${error.message}`);
-            }
-        }
-    }
-    
-    async displayFullSurahInChat(surahNumber) {
-        const userMessage = `Tampilkan semua ayat Surah ${surahNumber}`;
-        this.chatManager.appendUserMessage(userMessage);
-    
-        if (this.state.isFirstMessage) {
-            this.chatManager.hideWelcomeState();
-            this.state.isFirstMessage = false;
-            if (this.state.currentChatId === null) {
-                this.chatManager.createNewChat(false);
-            }
-        }
-    
-        const typingEl = this.chatManager.showTypingIndicator();
-    
-        try {
-            const surahData = await this.loadFullSurah(surahNumber);
-            typingEl.remove();
-            
-            // Buat response HTML
-            const responseEl = document.createElement('div');
-            responseEl.className = 'ai-response';
-            
-            let html = `
-                <div class="verse-header">
-                    <span class="surah-title">${surahData.name} (${surahData.englishName})</span>
-                    <small>${surahData.numberOfAyahs} ayat • ${surahData.revelationType === 'Meccan' ? 'Makkiyah' : 'Madaniyah'}</small>
-                </div>
-                <div class="surah-description" style="margin-bottom: 1rem; font-style: italic; color: rgba(255,255,255,0.7);">
-                    ${surahData.englishNameTranslation}
-                </div>
-            `;
-            
-            // Tambahkan semua ayat
-            surahData.ayahs.forEach(ayah => {
-                html += `
-                    <div class="verse-container">
-                        <div class="verse-reference">
-                            ${surahData.englishName} (${surahData.id}:${ayah.numberInSurah})
-                        </div>
-                        <div class="arabic-text" dir="rtl">
-                            ${ayah.arabic}
-                        </div>
-                        <div class="translation-text">
-                            <strong>Terjemahan:</strong> ${ayah.translation}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            responseEl.innerHTML = html;
-            this.dom.chatContainer.appendChild(responseEl);
-            
-            // Save to history
-            this.chatManager.saveMessageToHistory(
-                userMessage,
-                {
-                    type: 'full_surah',
-                    surahData: surahData,
-                    html: html
-                },
-                'verse'
-            );
-            
-            this.chatManager.scrollToBottom();
-            
-        } catch (error) {
-            typingEl.remove();
-            this.chatManager.showError(
-                `Gagal memuat Surah ${surahNumber}: ${error.message}`
-            );
-        }
-    }
-    
     async loadSurahData() {
         try {
-            this.state.surahData = await ApiService.fetchSurahList();
+            const response = await fetch(`${Constants.WORKER_URL}/api/surah`);
+            if (!response.ok) throw new Error('Failed to load surah list');
+            
+            const data = await response.json();
+            this.state.surahData = data;
             this.buildSurahMap();
             return true;
         } catch (error) {
@@ -2434,13 +2283,12 @@ class VerseManager {
     buildSurahMap() {
         this.state.surahMap.clear();
         this.state.surahData.forEach(surah => {
-            const key = surah.id || surah.number;
-            this.state.surahMap.set(parseInt(key), {
-                id: key,
-                name: surah.transliteration || surah.englishName || surah.name,
+            this.state.surahMap.set(surah.id, {
+                id: surah.id,
+                name: surah.name,
                 nameArabic: surah.name,
-                nameTranslation: surah.translation || surah.englishNameTranslation,
-                ayahs: surah.total_verses || surah.numberOfAyahs
+                nameTranslation: surah.translation,
+                ayahs: surah.total_verses
             });
         });
     }
@@ -2451,13 +2299,8 @@ class VerseManager {
         this.dom.surahSelect.innerHTML = '';
         this.state.surahData.forEach(surah => {
             const option = document.createElement('option');
-            option.value = surah.id || surah.number;
-            
-            const displayName = this.state.currentLanguage === 'id'
-                ? (surah.translation || surah.englishNameTranslation || surah.name)
-                : (surah.transliteration || surah.englishName || surah.name);
-            
-            option.textContent = `${surah.id || surah.number}. ${displayName} (${surah.name})`;
+            option.value = surah.id;
+            option.textContent = `${surah.id}. ${surah.name} (${surah.translation}) - ${surah.total_verses} ayat`;
             this.dom.surahSelect.appendChild(option);
         });
 
@@ -2485,11 +2328,11 @@ class VerseManager {
     async getSpecificVerse() {
         const surahNumber = this.dom.surahSelect.value;
         const ayahNumber = parseInt(this.dom.verseSelect.value);
-    
+
         if (!surahNumber || !ayahNumber) return;
-    
+
         this.closeActionSheet();
-    
+
         const surahInfo = this.state.surahMap.get(parseInt(surahNumber));
         if (!surahInfo) {
             this.chatManager.showError(
@@ -2497,14 +2340,14 @@ class VerseManager {
             );
             return;
         }
-    
+
         const userMessage = this.chatManager.getLocalizedText(
             `Show ${surahInfo.name} verse ${ayahNumber}`,
             `${surahInfo.name} ayat ${ayahNumber}`
         );
-    
+
         this.chatManager.appendUserMessage(userMessage);
-    
+
         if (this.state.isFirstMessage) {
             this.chatManager.hideWelcomeState();
             this.state.isFirstMessage = false;
@@ -2512,138 +2355,49 @@ class VerseManager {
                 this.chatManager.createNewChat(false);
             }
         }
-    
+
         const typingEl = this.chatManager.showTypingIndicator();
-    
+
         try {
-            // Load full surah data
-            const surahData = await this.loadFullSurah(surahNumber);
+            // Fetch Arabic text
+            const arabicResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`);
+            const arabicData = await arabicResponse.json();
             
-            // Find the specific ayah
-            const ayah = surahData.ayahs.find(a => a.numberInSurah === ayahNumber);
-            
-            if (!ayah) {
-                throw new Error(`Ayat ${ayahNumber} not found in Surah ${surahNumber}`);
+            // Fetch translation
+            const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`);
+            const translationData = await translationResponse.json();
+
+            if (arabicData.code !== 200 || translationData.code !== 200) {
+                throw new Error('Failed to fetch verse data');
             }
-    
+
+            const arabicAyah = arabicData.data.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+            const translationAyah = translationData.data.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
+
             typingEl.remove();
             
-            // Display the verse
-            this.displayVerseResponse({
-                surahNumber: surahData.id,
-                surahName: surahData.name,
-                surahNameArabic: surahData.nameArabic,
-                ayahNumber: ayah.numberInSurah,
-                arabicText: ayah.arabic,
-                translationText: ayah.translation || this.chatManager.getLocalizedText('Translation not available', 'Terjemahan tidak tersedia'),
-                englishText: ayah.english || ''
-            }, true);
-    
+            const verseData = {
+                surahNumber: parseInt(surahNumber),
+                surahName: surahInfo.name,
+                surahNameArabic: surahInfo.nameArabic,
+                ayahNumber: ayahNumber,
+                arabicText: arabicAyah?.text || '',
+                translationText: translationAyah?.text || 'Terjemahan tidak tersedia'
+            };
+
+            this.chatManager.displayVerseResponse(verseData);
+            this.chatManager.saveMessageToHistory(userMessage, verseData, 'verse');
+
         } catch (error) {
             typingEl.remove();
-            
-            // Fallback to old method if new one fails
-            console.warn('New method failed, falling back:', error);
-            
-            try {
-                const result = await ApiService.fetchSurahVerse(surahNumber, ayahNumber);
-                
-                if (result.success) {
-                    this.displayVerse(surahNumber, ayahNumber, result.arabicData, result.translationData, surahInfo);
-                } else {
-                    const fallbackResult = await ApiService.fetchSingleVerse(surahNumber, ayahNumber);
-                    
-                    if (fallbackResult) {
-                        this.displayVerseFromSingleAPI(surahNumber, ayahNumber, fallbackResult, surahInfo);
-                    } else {
-                        throw new Error('All API attempts failed');
-                    }
-                }
-            } catch (fallbackError) {
-                this.chatManager.showError(
-                    this.chatManager.getLocalizedText(
-                        `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${fallbackError.message}`,
-                        `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${fallbackError.message}`
-                    )
-                );
-            }
-        }
-    }
-
-    displayVerse(surahNumber, ayahNumber, arabicData, translationData, surahInfo) {
-        const arabicSurah = arabicData.data;
-        const translationSurah = translationData.data;
-
-        const arabicAyah = arabicSurah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
-        const translationAyah = translationSurah.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
-
-        if (!arabicAyah) {
-            throw new Error('Verse not found in Arabic text');
-        }
-
-        const aiResponse = {
-            surahNumber,
-            surahName: surahInfo.name,
-            surahNameArabic: surahInfo.nameArabic,
-            ayahNumber,
-            arabicText: arabicAyah.text,
-            translationText: translationAyah ? translationAyah.text : 
-                this.chatManager.getLocalizedText('Translation not available', 'Terjemahan tidak tersedia')
-        };
-
-        this.displayVerseResponse(aiResponse, true);
-    }
-
-    displayVerseFromSingleAPI(surahNumber, ayahNumber, apiResult, surahInfo) {
-        const aiResponse = {
-            surahNumber,
-            surahName: surahInfo.name,
-            ayahNumber,
-            arabicText: apiResult.data.text || 'Teks tidak tersedia',
-            translationText: apiResult.data.translation || 
-                this.chatManager.getLocalizedText('Translation not available', 'Terjemahan tidak tersedia')
-        };
-
-        this.displayVerseResponse(aiResponse, true);
-    }
-
-    displayVerseResponse(aiResponse, saveToHistory = true) {
-    if (this.verseManager) {
-        this.verseManager.displayVerseResponse(aiResponse, saveToHistory);
-    } else {
-        // Fallback jika verseManager belum tersedia
-        const responseEl = document.createElement('div');
-        responseEl.className = 'ai-response';
-        
-        const html = `
-            <div class="verse-header">
-                <span class="surah-title">${aiResponse.surahNameArabic || aiResponse.surahName} (${aiResponse.surahNumber}:${aiResponse.ayahNumber})</span>
-            </div>
-            <div class="arabic-text" dir="rtl">
-                ${aiResponse.arabicText}
-            </div>
-            <div class="translation-text">
-                ${this.getLocalizedText('Translation:', 'Terjemahan:')} ${aiResponse.translationText}
-            </div>
-        `;
-        
-        responseEl.innerHTML = html;
-        this.dom.chatContainer.appendChild(responseEl);
-        
-        if (saveToHistory) {
-            this.saveMessageToHistory(
-                this.getLocalizedText(
-                    `Verse ${aiResponse.surahNumber}:${aiResponse.ayahNumber}`,
-                    `Ayat ${aiResponse.surahNumber}:${aiResponse.ayahNumber}`
-                ),
-                aiResponse,
-                'verse'
+            this.chatManager.showError(
+                this.chatManager.getLocalizedText(
+                    `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${error.message}`,
+                    `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${error.message}`
+                )
             );
         }
-        
-        this.scrollToBottom();
     }
-}
 
     openActionSheet() {
         this.dom.actionSheetOverlay.classList.add('active');
@@ -2652,11 +2406,12 @@ class VerseManager {
 
         if (this.state.surahData.length > 0) {
             this.populateSurahSelect();
-            this.populateVerseSelect();
         } else {
             this.dom.surahSelect.innerHTML = `<option>${this.chatManager.getLocalizedText('Loading Surahs...', 'Memuat Surah...')}</option>`;
             this.dom.verseSelect.innerHTML = `<option>-</option>`;
-            this.loadSurahData();
+            this.loadSurahData().then(() => {
+                this.populateSurahSelect();
+            });
         }
     }
 
@@ -2667,228 +2422,24 @@ class VerseManager {
     }
 }
 
-// Voice Manager
+// Voice Manager (Simplified)
 class VoiceManager {
     constructor(state, dom, chatManager) {
         this.state = state;
         this.dom = dom;
         this.chatManager = chatManager;
-        this.elevenLabsAgent = null;
-        this.isConversationActive = false;
-        this.conversationHistory = [];
     }
 
-    async openVoicePanel() {
-        console.log('Opening voice panel...');
-
+    openVoicePanel() {
         this.dom.voiceOffcanvasOverlay.classList.add('active');
         this.dom.offcanvasVoice.classList.add('active');
         document.body.style.overflow = 'hidden';
-
-        this.showWaveAnimation(true);
-        this.updateStatus('Menyiapkan voice assistant...');
-
-        setTimeout(() => this.startElevenLabsConversation(), 300);
-    }
-
-    async startElevenLabsConversation() {
-        try {
-
-            if (!window.ElevenLabs) {
-                await this.loadElevenLabsSDK();
-            }
-
-            const agentOptions = {
-                agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
-                voice: {
-                    voiceId: "21m00Tcm4TlvDq8ikWAM",
-                    modelId: "eleven_multilingual_v2",
-                    settings: {
-                        stability: 0.5,
-                        similarity_boost: 0.8
-                    }
-                },
-                ui: {
-                    showLauncher: false, 
-
-                    showCloseButton: false
-                },
-                tools: {
-                    webhooks: [{
-                        name: "quran-ai-webhook",
-                        description: "AI assistant khusus Al-Quran",
-                        api_schema: {
-                            url: "https://ai-quran-workers.harisudahmalam.workers.dev/api/elevenhook",
-                            method: "POST"
-                        }
-                    }]
-                },
-
-                autoStart: true,
-                initialMessage: "Assalamualaikum, saya Ustad AI. Ada yang bisa saya bantu tentang Al-Quran?",
-                language: this.state.currentLanguage === 'id' ? 'id' : 'en'
-            };
-
-            this.elevenLabsAgent = new window.ElevenLabs.Agent(agentOptions);
-
-  this.setupAgentEvents();
-
-            setTimeout(() => {
-                if (this.elevenLabsAgent) {
-                    this.elevenLabsAgent.start();
-                    this.isConversationActive = true;
-                    this.updateStatus('🎙️ Ready - Speak now...');
-                }
-            }, 500);
-
-        } catch (error) {
-            console.error('Failed to start ElevenLabs:', error);
-            this.updateStatus('❌ Error: ' + error.message);
-            this.showWaveAnimation(false);
-        }
-    }
-
-    setupAgentEvents() {
-        if (!this.elevenLabsAgent) return;
-
-        this.elevenLabsAgent.on('listening', () => {
-            console.log('ElevenLabs: Listening...');
-            this.showWaveAnimation(true);
-            this.updateStatus('🎤 Listening... (speak now)');
-        });
-
-        this.elevenLabsAgent.on('speaking', (data) => {
-            console.log('ElevenLabs: Speaking...', data);
-            this.showWaveAnimation(true);
-            this.updateStatus('🗣️ AI is speaking...');
-
-            if (data?.text) {
-                this.addToConversation('ai', data.text);
-            }
-        });
-
-        this.elevenLabsAgent.on('idle', () => {
-            console.log('ElevenLabs: Idle');
-            this.showWaveAnimation(false);
-            this.updateStatus('✅ Ready for next question');
-        });
-
-        this.elevenLabsAgent.on('userSpeech', (text) => {
-            console.log('User said:', text);
-            this.addToConversation('user', text);
-        });
-
-        this.elevenLabsAgent.on('error', (error) => {
-            console.error('ElevenLabs Agent error:', error);
-            this.updateStatus('❌ Error: ' + error.message);
-            this.showWaveAnimation(false);
-        });
-    }
-
-    addToConversation(speaker, text) {
-        const conversationEl = document.getElementById('voiceConversation');
-        if (!conversationEl) return;
-
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `voice-message ${speaker}`;
-        messageDiv.style.cssText = `
-            margin: 8px 0;
-            padding: 10px 15px;
-            border-radius: 15px;
-            max-width: 80%;
-            word-wrap: break-word;
-            font-size: 0.9rem;
-            ${speaker === 'user' 
-                ? 'background: #4285f4; color: white; margin-left: auto;' 
-                : 'background: rgba(255,255,255,0.1);'}
-        `;
-
-        messageDiv.textContent = `${speaker === 'user' ? '👤 You' : '🤖 AI'}: ${text}`;
-        conversationEl.appendChild(messageDiv);
-
-        conversationEl.scrollTop = conversationEl.scrollHeight;
-
-        this.conversationHistory.push({
-            speaker,
-            text,
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    async loadElevenLabsSDK() {
-        return new Promise((resolve, reject) => {
-            if (window.ElevenLabs) {
-                resolve();
-                return;
-            }
-
-            const script = document.createElement('script');
-            script.src = 'https://elevenlabs.io/agent-widget/index.js';
-            script.defer = true;
-            script.onload = () => {
-                console.log('ElevenLabs SDK loaded');
-                resolve();
-            };
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
     }
 
     closeVoicePanel() {
-
-        if (this.elevenLabsAgent && this.isConversationActive) {
-            this.elevenLabsAgent.stop();
-            this.isConversationActive = false;
-        }
-
         this.dom.voiceOffcanvasOverlay.classList.remove('active');
         this.dom.offcanvasVoice.classList.remove('active');
         document.body.style.overflow = '';
-        this.showWaveAnimation(false);
-        this.updateStatus('Starting voice assistant...');
-
-        const conversationEl = document.getElementById('voiceConversation');
-        if (conversationEl) conversationEl.innerHTML = '';
-
-        if (this.conversationHistory.length > 0) {
-            this.saveConversationToChat();
-        }
-
-        this.conversationHistory = [];
-    }
-
-    saveConversationToChat() {
-
-        const userMessages = this.conversationHistory
-            .filter(msg => msg.speaker === 'user')
-            .map(msg => msg.text)
-            .join('\n');
-
-        const aiMessages = this.conversationHistory
-            .filter(msg => msg.speaker === 'ai')
-            .map(msg => msg.text)
-            .join('\n');
-
-        if (userMessages && aiMessages && this.chatManager) {
-
-            this.chatManager.saveMessageToHistory(
-                `[Voice Conversation] ${userMessages.substring(0, 50)}...`,
-                `🤖 Voice Assistant Conversation:\n\n${aiMessages}`,
-                'quran_ai'
-            );
-        }
-    }
-
-    showWaveAnimation(show) {
-        if (this.dom.waveAnimation) {
-            this.dom.waveAnimation.style.display = show ? 'flex' : 'none';
-        }
-    }
-
-    updateStatus(text) {
-        if (this.dom.recordingStatus) {
-            this.dom.recordingStatus.textContent = text;
-        }
     }
 }
 
@@ -2899,18 +2450,8 @@ class AIResponseHandler {
         this.dom = dom;
         this.chatManager = chatManager;
     }
-    
-    setChatManager(chatManager) {
-        this.chatManager = chatManager;
-    }
 
-    displayBackendAIResponse(userMessage, backendResponse, saveToHistory = true) {
-        // Pastikan kita memiliki DOM element
-        if (!this.dom.chatContainer) {
-            console.error('Chat container not found');
-            return;
-        }
-        
+    displayAIResponse(backendResponse) {
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
 
@@ -2937,107 +2478,13 @@ class AIResponseHandler {
                 html += `<div class="disclaimer">${backendResponse.disclaimer}</div>`;
             }
 
-            if (backendResponse.usage) {
-                const usage = backendResponse.usage;
-                html += this.renderUsageInfo(usage);
-            }
-
         } else {
             html += `<div class="error-message">${backendResponse.error || 'Terjadi kesalahan'}</div>`;
-
-            if (backendResponse.verses_data && backendResponse.verses_data.length > 0) {
-                html += `<div class="ai-text">${backendResponse.answer || ''}</div>`;
-                html += `<div class="verses-section" style="margin-top: 1rem;">`;
-                backendResponse.verses_data.forEach(verse => {
-                    html += `
-                        <div class="verse-container">
-                            <div class="verse-reference">${verse.reference}</div>
-                            <div class="arabic-text" dir="rtl">${verse.verse_arabic}</div>
-                            <div class="translation-text">${verse.verse_translation}</div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            }
-
-            if (backendResponse.limit_info) {
-                html += this.renderLimitInfo(backendResponse.limit_info);
-            }
         }
 
         responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
-
-        if (saveToHistory && this.chatManager) {
-            this.chatManager.saveMessageToHistory(userMessage, backendResponse, 'quran_ai');
-        }
-
-        if (this.chatManager) {
-            this.chatManager.scrollToBottom();
-        }
-    }
-
-
-    renderUsageInfo(usage) {
-        return `
-            <div class="usage-info">
-                <div class="usage-section">
-                    <div class="usage-title">${this.chatManager.getLocalizedText('Token Usage', 'Penggunaan Token')}</div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Input', 'Input')}</span>
-                        <span class="usage-value">${usage.tokens.input}</span>
-                    </div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Output', 'Output')}</span>
-                        <span class="usage-value">${usage.tokens.output}</span>
-                    </div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Total', 'Total')}</span>
-                        <span class="usage-value">${usage.tokens.total}</span>
-                    </div>
-                </div>
-
-                <div class="usage-section">
-                    <div class="usage-title">${this.chatManager.getLocalizedText('Neuron Usage', 'Penggunaan Neuron')}</div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Consumed', 'Digunakan')}</span>
-                        <span class="usage-value">${usage.neurons.formatted} neurons</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderLimitInfo(limitInfo) {
-        return `
-            <div class="usage-info">
-                <div class="usage-section">
-                    <div class="usage-title">${this.chatManager.getLocalizedText('Daily Limit', 'Batas Harian')}</div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Consumed', 'Digunakan')}</span>
-                        <span class="usage-value">${this.formatNeuronsDisplay(limitInfo.consumed)}</span>
-                    </div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Remaining', 'Tersisa')}</span>
-                        <span class="usage-value">${this.formatNeuronsDisplay(limitInfo.remaining)}</span>
-                    </div>
-                    <div class="usage-detail">
-                        <span class="usage-label">${this.chatManager.getLocalizedText('Daily Limit', 'Batas Harian')}</span>
-                        <span class="usage-value">${this.formatNeuronsDisplay(limitInfo.daily_limit)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    formatNeuronsDisplay(neurons) {
-        if (neurons < 1000) {
-            return neurons.toFixed(2) + ' neurons';
-        } else if (neurons < 1000000) {
-            return (neurons / 1000).toFixed(2) + 'k neurons';
-        } else {
-            return (neurons / 1000000).toFixed(4) + 'M neurons';
-        }
+        this.chatManager.scrollToBottom();
     }
 }
 
@@ -3046,19 +2493,12 @@ class QuranAIApp {
     constructor() {
         this.state = new AppState();
         this.dom = new DomElements();
-
-        this.aiHandler = new AIResponseHandler(this.state, this.dom);
-
-        this.chatManager = new ChatManager(this.state, this.dom, this.aiHandler);
-
+        this.chatManager = new ChatManager(this.state, this.dom);
         this.verseManager = new VerseManager(this.state, this.dom, this.chatManager);
-
         this.voiceManager = new VoiceManager(this.state, this.dom, this.chatManager);
+        this.aiHandler = new AIResponseHandler(this.state, this.dom, this.chatManager);
 
-        this.chatManager.setVerseManager(this.verseManager);
-
-        this.aiHandler.setChatManager(this.chatManager);
-
+        // Bind methods
         this.sendMessage = this.sendMessage.bind(this);
         this.toggleLanguage = this.toggleLanguage.bind(this);
         this.openOffcanvasMenu = this.openOffcanvasMenu.bind(this);
@@ -3067,7 +2507,6 @@ class QuranAIApp {
         this.closeOffcanvasVoice = this.closeOffcanvasVoice.bind(this);
         this.updateSendButtonState = this.updateSendButtonState.bind(this);
     }
-
 
     async init() {
         if (!this.dom.validate()) {
@@ -3078,38 +2517,26 @@ class QuranAIApp {
         this.setupEventListeners();
         await this.loadInitialData();
         this.updateUI();
-        
-        // Check for existing ElevenLabs agent
-        if (window.ustadAgent) {
-            console.log('ElevenLabs agent detected');
-        }
     }
 
     async loadInitialData() {
-        // Load chat history
         this.chatManager.loadFromLocalStorage();
-        
-        // Load surah data
         await this.verseManager.loadSurahData();
         
-        // Load existing chat if available
         if (this.state.chatHistory.length > 0) {
             this.chatManager.loadChat(this.state.chatHistory[0].id);
         }
     }
 
     updateUI() {
-        // Update language UI
         this.dom.langLabel.textContent = Constants.SUPPORTED_LANGUAGES[this.state.currentLanguage];
         this.dom.languageToggle.checked = this.state.currentLanguage === 'en';
         
-        // Update placeholder
         this.dom.messageInput.placeholder = this.chatManager.getLocalizedText(
             'Ask about the Quran...',
             'Tanyakan tentang Al-Quran...'
         );
         
-        // Update welcome text
         const welcomeText = this.dom.welcomeState.querySelector('.welcome-text');
         if (welcomeText) {
             welcomeText.textContent = this.chatManager.getLocalizedText(
@@ -3155,21 +2582,6 @@ class QuranAIApp {
             this.verseManager.openActionSheet();
         });
         
-        if (this.dom.waveBtn) {
-            this.dom.waveBtn.addEventListener('click', () => {
-                if (window.ustadAgent) {
-                    // Use ElevenLabs Agent
-                    window.ustadAgent.toggle();
-                    
-                    // Hide custom voice panel if open
-                    this.closeOffcanvasVoice();
-                } else {
-                    // Fallback to custom voice recording
-                    this.openOffcanvasVoice();
-                }
-            });
-        }        
-        
         if (this.dom.closeActionSheet) {
             this.dom.closeActionSheet.addEventListener('click', () => {
                 this.verseManager.closeActionSheet();
@@ -3183,22 +2595,10 @@ class QuranAIApp {
         }
         
         if (this.dom.surahSelect) {
-        this.dom.surahSelect.addEventListener('change', async () => {
-            this.verseManager.populateVerseSelect();
-            
-            const surahNumber = this.dom.surahSelect.value;
-            if (surahNumber) {
-                setTimeout(async () => {
-                    try {
-                        const surahData = await this.verseManager.loadFullSurah(surahNumber);
-                        console.log(`Pre-loaded Surah ${surahNumber}: ${surahData.name}`);
-                    } catch (error) {
-                        console.warn(`Failed to pre-load surah ${surahNumber}:`, error);
-                    }
-                }, 100);
-            }
-        });
-    }
+            this.dom.surahSelect.addEventListener('change', () => {
+                this.verseManager.populateVerseSelect();
+            });
+        }
         
         if (this.dom.goVerseBtn) {
             this.dom.goVerseBtn.addEventListener('click', () => {
@@ -3208,13 +2608,7 @@ class QuranAIApp {
         
         // Voice events
         if (this.dom.waveBtn) {
-            this.dom.waveBtn.addEventListener('click', () => {
-                if (window.ustadAgent) {
-                    window.ustadAgent.toggle();
-                } else {
-                    this.openOffcanvasVoice();
-                }
-            });
+            this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice);
         }
         
         if (this.dom.closeOffcanvasVoice) {
@@ -3224,33 +2618,18 @@ class QuranAIApp {
         if (this.dom.voiceOffcanvasOverlay) {
             this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice);
         }
-        
-        if (this.dom.startRecordingBtn) {
-            this.dom.startRecordingBtn.addEventListener('click', () => {
-                this.voiceManager.startRecording();
-            });
-        }
-        
-        if (this.dom.stopRecordingBtn) {
-            this.dom.stopRecordingBtn.addEventListener('click', () => {
-                this.voiceManager.stopRecording();
-            });
-        }
     }
 
     async sendMessage() {
         const userMessage = this.dom.messageInput.value.trim();
         if (!userMessage) return;
 
-        // Clear input and update UI
         this.dom.messageInput.value = '';
         this.dom.messageInput.style.height = 'auto';
         this.updateSendButtonState();
 
-        // Add user message to chat
         this.chatManager.appendUserMessage(userMessage);
 
-        // Handle first message
         if (this.state.isFirstMessage) {
             this.chatManager.hideWelcomeState();
             this.state.isFirstMessage = false;
@@ -3259,16 +2638,14 @@ class QuranAIApp {
             }
         }
 
-        // Show typing indicator
         const typingEl = this.chatManager.showTypingIndicator();
 
         try {
-            // Send to AI API
             const response = await ApiService.sendQuestion(userMessage, this.state.currentLanguage);
             typingEl.remove();
             
-            // Display response
-            this.aiHandler.displayBackendAIResponse(userMessage, response, true);
+            this.aiHandler.displayAIResponse(response);
+            this.chatManager.saveMessageToHistory(userMessage, response, 'quran_ai');
             
         } catch (error) {
             typingEl.remove();
@@ -3288,7 +2665,6 @@ class QuranAIApp {
             this.updateUI();
             this.chatManager.renderChatHistory();
             
-            // Update existing chat if loaded
             if (this.state.currentChatId) {
                 const currentChat = this.state.chatHistory.find(c => c.id === this.state.currentChatId);
                 if (currentChat) {
@@ -3335,39 +2711,6 @@ class QuranAIApp {
     closeOffcanvasVoice() {
         this.voiceManager.closeVoicePanel();
     }
-
-    checkElevenLabsStatus() {
-            const waveBtn = this.dom.waveBtn;
-            if (!waveBtn) return;
-            
-            const statusSpan = waveBtn.querySelector('.voice-status');
-            if (statusSpan) {
-                if (window.ustadAgent) {
-                    statusSpan.textContent = 'AI';
-                    statusSpan.style.color = '#4285f4';
-                    waveBtn.title = 'ElevenLabs Voice Assistant (Klik untuk berbicara)';
-                } else {
-                    statusSpan.textContent = '🎤';
-                    statusSpan.style.color = '#34a853';
-                    waveBtn.title = 'Voice Recording (Custom)';
-                }
-            }
-        }
-
-    async init() {
-        if (!this.dom.validate()) {
-            console.error('Required DOM elements not found');
-            return;
-        }
-
-        this.setupEventListeners();
-        await this.loadInitialData();
-        this.updateUI();
-        this.checkElevenLabsStatus(); // Check status
-        
-        // Check again after a delay (in case widget loads async)
-        setTimeout(() => this.checkElevenLabsStatus(), 2000);
-    }
 }
 
 // Initialize application when DOM is ready
@@ -3377,18 +2720,12 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.lucide) {
+// Initialize Lucide icons
+if (window.lucide) {
+    document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
-    }
-    document.getElementById('waveBtn')?.addEventListener('click', function() {
-        setTimeout(() => {
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-        }, 300);
     });
-});
+}
 </script>
 
     <div id="elevenlabs-agent-container"></div>
