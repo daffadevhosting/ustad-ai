@@ -2420,26 +2420,6 @@ class VerseManager {
         }
     }
     
-    if (this.dom.goVerseBtn) {
-        this.dom.goVerseBtn.addEventListener('click', () => {
-            const surahNumber = this.dom.surahSelect.value;
-            
-            // Jika ingin menampilkan semua ayat dari surah
-            this.verseManager.displayFullSurahInChat(surahNumber);
-            this.verseManager.closeActionSheet();
-        });
-    }
-    
-    if (this.dom.verseSelect) {
-        this.dom.verseSelect.addEventListener('change', () => {
-            const surahNumber = this.dom.surahSelect.value;
-            const verseNumber = this.dom.verseSelect.value;
-            
-            // Bisa tambahkan logika untuk menampilkan ayat tertentu
-            console.log(`Selected: Surah ${surahNumber}, Verse ${verseNumber}`);
-        });
-    }
-    
     async loadSurahData() {
         try {
             this.state.surahData = await ApiService.fetchSurahList();
