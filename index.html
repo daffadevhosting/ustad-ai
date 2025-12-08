@@ -366,8 +366,7 @@
             background: rgba(255,255,255,0.15);
         }
 
-        /* Tombol Wave & Send */
-        .wave-btn, .verse-btn {
+        .wave-btn, .verse-btn, .pry-btn {
             background: rgba(255,255,255,0.1);
             border: none;
             width: 40px;
@@ -1742,6 +1741,12 @@
             <path d="M19 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h13v16H6V4zm2 10h9v2H8v-2zm0-3h9v2H8v-2zm0-3h9v2H8V8z"/>
         </svg>
     </button>
+    
+    <button class="pry-btn" id="prayerBtn" title="Bacaan Sholat">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        </svg>
+    </button>
 </div>
 
 <div class="action-sheet-overlay" id="actionSheetOverlay"></div>
@@ -1957,6 +1962,59 @@ class ApiService {
             return await response.json();
         } catch (error) {
             console.error('Question API failed:', error);
+            throw error;
+        }
+    }
+    
+    static async fetchPrayerReadings(search = '', category = '', limit = 20) {
+        try {
+            let url = `${Constants.WORKER_URL}/api/prayer-readings`;
+            const params = new URLSearchParams();
+            
+            if (search) params.append('search', search);
+            if (category) params.append('category', category);
+            if (limit) params.append('limit', limit);
+            
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to load prayer readings');
+            return await response.json();
+        } catch (error) {
+            console.error('Prayer readings API failed:', error);
+            return { success: false, data: [] };
+        }
+    }
+    
+    static async fetchPrayerSequence() {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/prayer-sequence`);
+            if (!response.ok) throw new Error('Failed to load prayer sequence');
+            return await response.json();
+        } catch (error) {
+            console.error('Prayer sequence API failed:', error);
+            return { success: false, data: [] };
+        }
+    }
+    
+    static async askPrayerQuestion(question, language) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/ask-prayer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, language })
+            });
+    
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+    
+            return await response.json();
+        } catch (error) {
+            console.error('Prayer question API failed:', error);
             throw error;
         }
     }
@@ -2254,6 +2312,67 @@ class ChatManager {
 
     getLocalizedText(english, indonesian) {
         return this.state.currentLanguage === 'id' ? indonesian : english;
+    }
+
+    displayPrayerReading(prayerData) {
+        const responseEl = document.createElement('div');
+        responseEl.className = 'ai-response prayer-reading';
+        
+        const html = `
+            <div class="verse-header">
+                <span class="surah-title">${prayerData.name}</span>
+                <small>${prayerData.category}</small>
+            </div>
+            <div class="arabic-text" dir="rtl">
+                ${prayerData.arabic}
+            </div>
+            <div class="prayer-latin" style="margin: 0.5rem 0; font-style: italic; color: rgba(255,255,255,0.8);">
+                ${prayerData.latin}
+            </div>
+            <div class="translation-text">
+                <strong>Terjemahan:</strong> ${prayerData.translation}
+            </div>
+            <div class="prayer-description" style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; font-size: 0.9rem;">
+                <strong>Keterangan:</strong> ${prayerData.description}
+            </div>
+        `;
+        
+        responseEl.innerHTML = html;
+        this.dom.chatContainer.appendChild(responseEl);
+        this.scrollToBottom();
+    }
+    
+    displayPrayerAIResponse(prayerResponse) {
+        const responseEl = document.createElement('div');
+        responseEl.className = 'ai-response';
+        
+        let html = `<div class="ai-text">${prayerResponse.answer}</div>`;
+        
+        if (prayerResponse.relevant_prayers && prayerResponse.relevant_prayers.length > 0) {
+            html += `<div class="prayers-section" style="margin-top: 1.5rem;">`;
+            html += `<h4 style="margin-bottom: 1rem; color: #4285f4;">Bacaan Sholat Terkait:</h4>`;
+            
+            prayerResponse.relevant_prayers.forEach(prayer => {
+                html += `
+                    <div class="prayer-card" style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.75rem; border-left: 3px solid #4285f4;">
+                        <div style="font-weight: 500; margin-bottom: 0.5rem;">${prayer.name}</div>
+                        <div dir="rtl" style="font-size: 1.2rem; margin-bottom: 0.5rem;">${prayer.arabic}</div>
+                        <div style="font-style: italic; margin-bottom: 0.5rem;">${prayer.latin}</div>
+                        <div style="color: rgba(255,255,255,0.8);">${prayer.translation}</div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+        }
+        
+        if (prayerResponse.disclaimer) {
+            html += `<div class="disclaimer">${prayerResponse.disclaimer}</div>`;
+        }
+        
+        responseEl.innerHTML = html;
+        this.dom.chatContainer.appendChild(responseEl);
+        this.scrollToBottom();
     }
 }
 
@@ -2618,6 +2737,13 @@ class QuranAIApp {
         if (this.dom.voiceOffcanvasOverlay) {
             this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice);
         }
+        
+        if (document.getElementById('prayerBtn')) {
+            document.getElementById('prayerBtn').addEventListener('click', () => {
+                this.openPrayerReadings();
+            });
+        }
+ 
     }
 
     async sendMessage() {
@@ -2711,6 +2837,71 @@ class QuranAIApp {
     closeOffcanvasVoice() {
         this.voiceManager.closeVoicePanel();
     }
+    
+    openPrayerReadings() {
+            const userMessage = "Tampilkan bacaan sholat";
+            this.chatManager.appendUserMessage(userMessage);
+        
+            if (this.state.isFirstMessage) {
+                this.chatManager.hideWelcomeState();
+                this.state.isFirstMessage = false;
+                if (this.state.currentChatId === null) {
+                    this.chatManager.createNewChat(false);
+                }
+            }
+        
+            const typingEl = this.chatManager.showTypingIndicator();
+        
+            ApiService.fetchPrayerSequence()
+                .then(response => {
+                    typingEl.remove();
+                    
+                    if (response.success && response.data) {
+                        const responseEl = document.createElement('div');
+                        responseEl.className = 'ai-response';
+                        
+                        let html = `
+                            <div style="margin-bottom: 1.5rem;">
+                                <h3 style="color: #4285f4; margin-bottom: 1rem;">Bacaan Sholat Lengkap</h3>
+                                <p style="margin-bottom: 1rem;">Berikut adalah bacaan-bacaan sholat sesuai urutan dalam sholat:</p>
+                            </div>
+                        `;
+                        
+                        response.data.forEach((prayer, index) => {
+                            html += `
+                                <div class="prayer-item" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 0.75rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <span style="font-weight: 500; color: #4285f4;">${index + 1}. ${prayer.name}</span>
+                                        <span style="font-size: 0.8rem; background: rgba(66, 133, 244, 0.2); padding: 0.25rem 0.5rem; border-radius: 1rem;">${prayer.category}</span>
+                                    </div>
+                                    <div dir="rtl" style="font-size: 1.3rem; margin-bottom: 0.5rem; text-align: right;">${prayer.arabic}</div>
+                                    <div style="font-style: italic; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">${prayer.latin}</div>
+                                    <div style="margin-bottom: 0.5rem;"><strong>Terjemahan:</strong> ${prayer.translation}</div>
+                                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${prayer.description}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        responseEl.innerHTML = html;
+                        this.dom.chatContainer.appendChild(responseEl);
+                        
+                        this.chatManager.saveMessageToHistory(
+                            userMessage,
+                            { type: 'prayer_sequence', data: response.data },
+                            'prayer'
+                        );
+                        
+                    } else {
+                        this.chatManager.showError('Gagal memuat bacaan sholat');
+                    }
+                    
+                    this.chatManager.scrollToBottom();
+                })
+                .catch(error => {
+                    typingEl.remove();
+                    this.chatManager.showError('Error: ' + error.message);
+                });
+        }
 }
 
 // Initialize application when DOM is ready
