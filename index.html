@@ -966,6 +966,7 @@
             color: #34a853;
         }
         
+/* Tambahkan CSS ini di style section */
 .offcanvas-voice {
     position: fixed;
     bottom: 0;
@@ -973,7 +974,7 @@
     right: 0;
     max-width: 500px;
     margin: 0 auto;
-    background: #1e1f20;
+    background: #131314;
     z-index: 300;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -990,151 +991,198 @@
     transform: translateY(0);
 }
 
-.offcanvas-voice::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-}
-
 .offcanvas-voice-header {
-    padding: 1.5rem 1.25rem 1rem;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: relative;
+    flex-shrink: 0;
 }
 
 .offcanvas-voice-title {
     font-size: 1.1rem;
     font-weight: 500;
     color: #4285f4;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .offcanvas-voice-body {
     position: relative;
     flex: 1;
-    padding: 1.5rem 1.25rem 2rem;
-    overflow-y: auto;
-}
-
-/* Voice controls styling tetap sama */
-.voice-controls {
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    padding: 1rem;
 }
 
-.voice-action-btn {
+/* Wave Container - Full screen style */
+.wave-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 1rem;
-    background: #4285f4;
-    border: none;
-    color: white;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s;
 }
 
-.voice-action-btn:hover {
-    background: #5a95f5;
-}
-
-.voice-action-btn svg {
-    fill: white;
-}
-
-.recording-status {
-    text-align: center;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.75rem;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* Wave Animation Styles */
-.wave-animation {
-    display: none; /* Awalnya hidden, akan di-show oleh JS */
+.wave-bars {
+    display: none; 
     justify-content: center;
     align-items: center;
+    gap: 6px;
     height: 100px;
-    gap: 8px;
-    margin: 2rem 0;
+}
+
+.wave-bars.active {
+    display: flex;
 }
 
 .wave-bar {
     width: 6px;
     height: 40px;
-    background: linear-gradient(135deg, #4285f4, #34a853);
+    background: linear-gradient(to top, #4285f4, #34a853);
     border-radius: 3px;
+    opacity: 0.6;
     animation: wave 1.2s infinite ease-in-out;
-    transform-origin: bottom;
 }
 
-.wave-bar:nth-child(1) { animation-delay: -0.4s; }
-.wave-bar:nth-child(2) { animation-delay: -0.3s; }
-.wave-bar:nth-child(3) { animation-delay: -0.2s; }
-.wave-bar:nth-child(4) { animation-delay: -0.1s; }
-.wave-bar:nth-child(5) { animation-delay: 0s; }
+.wave-bar:nth-child(1) { animation-delay: -0.6s; }
+.wave-bar:nth-child(2) { animation-delay: -0.5s; }
+.wave-bar:nth-child(3) { animation-delay: -0.4s; }
+.wave-bar:nth-child(4) { animation-delay: -0.3s; }
+.wave-bar:nth-child(5) { animation-delay: -0.2s; }
+.wave-bar:nth-child(6) { animation-delay: -0.1s; }
+.wave-bar:nth-child(7) { animation-delay: 0s; }
 
+/* Tombol Mic - Floating di tengah bawah */
+.mic-button-container {
+    position: absolute;
+    bottom: 2rem;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+}
+
+.mic-button {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #4285f4;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(66, 133, 244, 0.4);
+}
+
+.mic-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(66, 133, 244, 0.5);
+}
+
+.mic-button:active {
+    transform: scale(0.98);
+}
+
+.mic-button.listening {
+    background: #ea4335;
+    box-shadow: 0 8px 25px rgba(234, 67, 53, 0.4);
+    animation: pulse 1.5s infinite;
+}
+
+.mic-button.listening:hover {
+    box-shadow: 0 12px 30px rgba(234, 67, 53, 0.5);
+}
+
+.mic-icon {
+    width: 32px;
+    height: 32px;
+    color: white;
+}
+
+.mic-button.listening .mic-icon {
+    animation: mic-pulse 1s infinite;
+}
+
+/* Animations */
 @keyframes wave {
     0%, 60%, 100% { 
-        transform: scaleY(0.3); 
-        opacity: 0.5;
+        transform: scaleY(0.3);
+        opacity: 0.4;
     }
     30% { 
-        transform: scaleY(1); 
+        transform: scaleY(1);
         opacity: 1;
     }
 }
 
-.recording-status {
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 25px rgba(234, 67, 53, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 12px 30px rgba(234, 67, 53, 0.6);
+    }
+}
+
+@keyframes mic-pulse {
+    0%, 100% { 
+        opacity: 1;
+    }
+    50% { 
+        opacity: 0.7;
+    }
+}
+
+/* Status minimal (opsional) */
+.voice-status {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
     text-align: center;
-    padding: 1rem;
-    font-size: 1rem;
-    color: #4285f4;
-    font-weight: 500;
-    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-50px);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .offcanvas-voice {
-        max-width: 100%;
-        border-top-left-radius: 1.5rem;
-        border-top-right-radius: 1.5rem;
-    }
+.voice-status.show {
+    opacity: 1;
 }
 
+/* Responsive */
 @media (max-width: 480px) {
-    .offcanvas-voice {
-        max-height: 85vh;
-        border-top-left-radius: 1.25rem;
-        border-top-right-radius: 1.25rem;
+    .mic-button {
+        width: 70px;
+        height: 70px;
     }
     
-    .offcanvas-voice-header {
-        padding: 1.25rem 1rem 0.75rem;
+    .mic-icon {
+        width: 28px;
+        height: 28px;
     }
     
-    .offcanvas-voice-body {
-        padding: 1rem 1rem 1.5rem;
+    .wave-bars {
+        height: 80px;
+    }
+    
+    .wave-bar {
+        width: 5px;
+        height: 35px;
     }
 }
-
 #voiceOffcanvasOverlay {
     z-index: 250; /* Lebih rendah dari offcanvas-voice tapi lebih tinggi dari konten lain */
     background: rgba(0, 0, 0, 0.7); /* Lebih gelap */
@@ -1632,81 +1680,42 @@
     
 <div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
 
+<!-- Replace seluruh offcanvas-voice dengan yang ini -->
 <div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
 <div class="offcanvas-voice" id="offcanvasVoice">
+  <!-- Header minimal -->
   <div class="offcanvas-voice-header">
-      <div class="voice-header-main">
-          <div class="voice-icon-wrapper">
-              <i data-lucide="mic" class="voice-main-icon"></i>
-              <div class="voice-status-indicator">
-                  <i data-lucide="circle" class="status-dot"></i>
-              </div>
-          </div>
-          
-          <div class="voice-header-text">
-              <h3 class="voice-title">
-                  <i data-lucide="messages-square" class="title-icon"></i>
-                  Ustad Agent
-              </h3>
-              <p class="voice-subtitle" id="voiceSubtitle">
-                  <i data-lucide="clock" class="subtitle-icon"></i>
-              </p>
-          </div>
-      </div>
-      
+      <h3 class="offcanvas-voice-title">
+          <i data-lucide="mic"></i>
+          Ustad Voice
+      </h3>
       <button class="close-offcanvas" id="closeOffcanvasVoice">
           <i data-lucide="x"></i>
       </button>
   </div>
-<div class="offcanvas-voice-body">
-    <div class="voice-controls">
-        <!-- Wave Animation Container -->
-        <div class="wave-animation-container">
-            <div class="wave-bars">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
-            
-            <!-- Status dengan Lucide Icons -->
-            <div class="voice-status-display">
-                <div class="status-icon-wrapper" id="statusIcon">
-                    <i data-lucide="mic" class="status-icon"></i>
-                </div>
-                <div class="status-text-wrapper">
-                    <span class="status-message" id="statusMessage">Tap to start conversation</span>
-                    <span class="status-details" id="statusDetails">
-                        <i data-lucide="info" class="info-icon"></i>
-                        Real-time Quran Q&A
-                    </span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Conversation History (akan diisi secara dinamis) -->
-        <div class="voice-conversation-log" id="voiceConversationLog">
-            <!-- Messages akan muncul di sini -->
-        </div>
-        
-        <!-- Tips Section -->
-        <div class="voice-tips">
-            <div class="tip-item">
-                <i data-lucide="lightbulb"></i>
-                <span>Ask about Quran verses, tafsir, or Islamic teachings</span>
-            </div>
-            <div class="tip-item">
-                <i data-lucide="volume-2"></i>
-                <span>AI will respond with voice and text simultaneously</span>
-            </div>
-            <div class="tip-item">
-                <i data-lucide="clock"></i>
-                <span>Close panel to save conversation to chat history</span>
-            </div>
-        </div>
-    </div>
-</div>
+  
+  <!-- Body minimal: hanya animasi dan tombol mic -->
+  <div class="offcanvas-voice-body">
+      <!-- Wave Animation - Full screen -->
+      <div class="wave-container" id="waveContainer">
+          <div class="wave-bars">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+          </div>
+      </div>
+      
+      <!-- Tombol Mic - Floating di tengah bawah -->
+      <div class="mic-button-container">
+          <button class="mic-button" id="micButton">
+              <i data-lucide="mic" class="mic-icon"></i>
+          </button>
+      </div>
+  </div>
 </div>
 
     <main class="main-content">
@@ -2547,18 +2556,402 @@ class VoiceManager {
         this.state = state;
         this.dom = dom;
         this.chatManager = chatManager;
+        this.speechManager = new WebSpeechManager();
+        this.isListening = false;
+        this.isSpeaking = false;
+        this.currentQuestion = '';
+        this.currentAnswer = '';
     }
 
     openVoicePanel() {
+        console.log('Opening minimal voice panel...');
+        
         this.dom.voiceOffcanvasOverlay.classList.add('active');
         this.dom.offcanvasVoice.classList.add('active');
         document.body.style.overflow = 'hidden';
+        
+        // Set language
+        this.speechManager.setLanguage(this.state.currentLanguage);
+        
+        // Reset UI
+        this.stopWaveAnimation();
+        this.resetMicButton();
+    }
+
+    toggleVoiceRecording() {
+        const micButton = document.getElementById('micButton');
+        
+        if (!this.isListening) {
+            this.startVoiceRecording();
+            micButton.classList.add('listening');
+        } else {
+            this.stopVoiceRecording();
+            micButton.classList.remove('listening');
+        }
+    }
+
+    startVoiceRecording() {
+        if (this.isListening) return;
+        
+        console.log('Starting voice recording...');
+        
+        // Show wave animation
+        this.startWaveAnimation();
+        
+        // Start listening with Web Speech API
+        const success = this.speechManager.startListening(
+            () => {
+                // onStart
+                this.isListening = true;
+                console.log('Listening started');
+            },
+            (transcript) => {
+                // onResult
+                this.currentQuestion = transcript;
+                console.log('User said:', transcript);
+                
+                // Stop listening
+                this.stopVoiceRecording();
+                
+                // Process with AI
+                this.processQuestion(transcript);
+            },
+            (error) => {
+                // onError
+                console.error('Speech recognition error:', error);
+                this.isListening = false;
+                this.stopWaveAnimation();
+                this.resetMicButton();
+                
+                // Show brief error in chat
+                setTimeout(() => {
+                    this.chatManager.showError('Gagal mengenali suara. Coba lagi.');
+                }, 100);
+            },
+            () => {
+                // onEnd
+                this.isListening = false;
+                this.stopWaveAnimation();
+                console.log('Listening ended');
+            }
+        );
+        
+        if (!success) {
+            console.error('Failed to start speech recognition');
+            this.stopWaveAnimation();
+            this.resetMicButton();
+        }
+    }
+
+    stopVoiceRecording() {
+        if (this.isListening) {
+            this.speechManager.stopListening();
+            this.isListening = false;
+            this.stopWaveAnimation();
+        }
+    }
+
+    async processQuestion(question) {
+        try {
+            // Add user message to chat
+            this.chatManager.appendUserMessage(question);
+            
+            // Show typing indicator in chat
+            const typingEl = this.chatManager.showTypingIndicator();
+            
+            // Send to AI
+            const response = await ApiService.sendQuestion(question, this.state.currentLanguage);
+            
+            this.chatManager.removeTypingIndicator();
+            
+            if (response.success) {
+                this.currentAnswer = response.answer;
+                
+                // Display AI response in chat
+                this.displayAIResponseInChat(response);
+                
+                // Save to chat history
+                this.chatManager.saveMessageToHistory(question, response, 'quran_ai');
+                
+                // Speak the response
+                this.speakResponse(response.answer);
+                
+            } else {
+                this.chatManager.showError('AI tidak bisa menjawab saat ini.');
+            }
+            
+        } catch (error) {
+            console.error('Error processing question:', error);
+            this.chatManager.showError('Terjadi kesalahan. Silakan coba lagi.');
+        }
+    }
+
+    displayAIResponseInChat(response) {
+        const responseEl = document.createElement('div');
+        responseEl.className = 'ai-response';
+        
+        let html = `<div class="ai-text">${response.answer}</div>`;
+        
+        if (response.verses_data && response.verses_data.length > 0) {
+            html += `<div class="verses-section" style="margin-top: 1rem;">`;
+            response.verses_data.forEach(verse => {
+                html += `
+                    <div class="verse-container">
+                        <div class="verse-reference">${verse.reference}</div>
+                        <div class="arabic-text" dir="rtl">${verse.verse_arabic}</div>
+                        <div class="translation-text">${verse.verse_translation}</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        
+        if (response.disclaimer) {
+            html += `<div class="disclaimer">${response.disclaimer}</div>`;
+        }
+        
+        responseEl.innerHTML = html;
+        this.dom.chatContainer.appendChild(responseEl);
+        this.chatManager.scrollToBottom();
+    }
+
+    speakResponse(text) {
+        const lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
+        
+        this.speechManager.speak(text, {
+            lang: lang,
+            rate: 0.9,
+            pitch: 1.0,
+            volume: 1.0,
+            onStart: () => {
+                this.isSpeaking = true;
+                console.log('AI started speaking');
+            },
+            onEnd: () => {
+                this.isSpeaking = false;
+                console.log('AI finished speaking');
+                
+                // Auto-close voice panel after speaking (optional)
+                setTimeout(() => {
+                    if (!this.isListening) {
+                        this.closeVoicePanel();
+                    }
+                }, 1000);
+            },
+            onError: (error) => {
+                console.error('Speech synthesis error:', error);
+                this.isSpeaking = false;
+            }
+        });
+    }
+
+    startWaveAnimation() {
+        const waveBars = document.querySelector('.wave-bars');
+        if (waveBars) {
+            waveBars.classList.add('active');
+        }
+    }
+
+    stopWaveAnimation() {
+        const waveBars = document.querySelector('.wave-bars');
+        if (waveBars) {
+            waveBars.classList.remove('active');
+        }
+    }
+
+    resetMicButton() {
+        const micButton = document.getElementById('micButton');
+        if (micButton) {
+            micButton.classList.remove('listening');
+        }
     }
 
     closeVoicePanel() {
+        // Stop any ongoing speech or listening
+        this.stopVoiceRecording();
+        this.speechManager.stopSpeaking();
+        
+        // Close panel
         this.dom.voiceOffcanvasOverlay.classList.remove('active');
         this.dom.offcanvasVoice.classList.remove('active');
         document.body.style.overflow = '';
+        
+        // Reset
+        this.stopWaveAnimation();
+        this.resetMicButton();
+    }
+
+    autoClosePanel() {
+        // Auto close setelah 3 detik selesai berbicara
+        setTimeout(() => {
+            if (!this.isListening && !this.isSpeaking) {
+                this.closeVoicePanel();
+            }
+        }, 3000);
+    }
+    
+    speakResponse(text) {
+        const lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
+        
+        this.speechManager.speak(text, {
+            lang: lang,
+            rate: 0.9,
+            pitch: 1.0,
+            volume: 1.0,
+            onStart: () => {
+                this.isSpeaking = true;
+            },
+            onEnd: () => {
+                this.isSpeaking = false;
+                this.autoClosePanel(); // Auto close setelah selesai
+            },
+            onError: (error) => {
+                console.error('Speech synthesis error:', error);
+                this.isSpeaking = false;
+                this.autoClosePanel(); // Auto close meskipun error
+            }
+        });
+    }
+}
+
+class WebSpeechManager {
+    constructor() {
+        this.synth = window.speechSynthesis;
+        this.recognition = null;
+        this.isListening = false;
+        this.isSpeaking = false;
+        this.initSpeechRecognition();
+    }
+
+    initSpeechRecognition() {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            console.warn('Speech Recognition not supported');
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        this.recognition.lang = 'id-ID';
+        this.recognition.maxAlternatives = 1;
+
+        this.recognition.onstart = () => {
+            this.isListening = true;
+            if (this.onStartCallback) this.onStartCallback();
+        };
+
+        this.recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (this.onResultCallback) this.onResultCallback(transcript);
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            this.isListening = false;
+            if (this.onErrorCallback) this.onErrorCallback(event.error);
+        };
+
+        this.recognition.onend = () => {
+            this.isListening = false;
+            if (this.onEndCallback) this.onEndCallback();
+        };
+    }
+
+    setLanguage(lang) {
+        if (this.recognition) {
+            this.recognition.lang = lang === 'id' ? 'id-ID' : 'en-US';
+        }
+    }
+
+    startListening(onStart, onResult, onError, onEnd) {
+        if (!this.recognition) {
+            if (onError) onError('Speech recognition not available');
+            return false;
+        }
+
+        if (this.isListening) {
+            this.stopListening();
+        }
+
+        this.onStartCallback = onStart;
+        this.onResultCallback = onResult;
+        this.onErrorCallback = onError;
+        this.onEndCallback = onEnd;
+
+        try {
+            this.recognition.start();
+            return true;
+        } catch (error) {
+            console.error('Failed to start recognition:', error);
+            if (onError) onError(error.message);
+            return false;
+        }
+    }
+
+    stopListening() {
+        if (this.recognition && this.isListening) {
+            this.recognition.stop();
+            this.isListening = false;
+        }
+    }
+
+    speak(text, options = {}) {
+        if (!this.synth) {
+            console.warn('Speech synthesis not available');
+            return false;
+        }
+
+        // Cancel any ongoing speech
+        if (this.isSpeaking) {
+            this.synth.cancel();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.lang = options.lang || 'id-ID';
+        utterance.rate = options.rate || 0.9;
+        utterance.pitch = options.pitch || 1.0;
+        utterance.volume = options.volume || 1.0;
+
+        // Find a suitable voice
+        const voices = this.synth.getVoices();
+        if (voices.length > 0) {
+            const preferredVoice = voices.find(voice => 
+                voice.lang.startsWith(utterance.lang)
+            ) || voices[0];
+            
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+        }
+
+        utterance.onstart = () => {
+            this.isSpeaking = true;
+            if (options.onStart) options.onStart();
+        };
+
+        utterance.onend = () => {
+            this.isSpeaking = false;
+            if (options.onEnd) options.onEnd();
+        };
+
+        utterance.onerror = (event) => {
+            this.isSpeaking = false;
+            console.error('Speech synthesis error:', event);
+            if (options.onError) options.onError(event);
+        };
+
+        this.synth.speak(utterance);
+        return true;
+    }
+
+    stopSpeaking() {
+        if (this.isSpeaking) {
+            this.synth.cancel();
+            this.isSpeaking = false;
+        }
     }
 }
 
@@ -2725,18 +3118,43 @@ class QuranAIApp {
             });
         }
         
-        // Voice events
-        if (this.dom.waveBtn) {
-            this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice);
+// Voice panel events
+if (this.dom.waveBtn) {
+    this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice.bind(this));
+}
+
+if (this.dom.closeOffcanvasVoice) {
+    this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+}
+
+if (this.dom.voiceOffcanvasOverlay) {
+    this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+}
+
+// Mic button event
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#micButton')) {
+        this.voiceManager.toggleVoiceRecording();
+    }
+});
+
+// Keyboard shortcut untuk voice panel
+document.addEventListener('keydown', (e) => {
+    // Ctrl + Space untuk buka/close voice panel
+    if (e.ctrlKey && e.code === 'Space') {
+        e.preventDefault();
+        if (this.dom.offcanvasVoice.classList.contains('active')) {
+            this.closeOffcanvasVoice();
+        } else {
+            this.openOffcanvasVoice();
         }
-        
-        if (this.dom.closeOffcanvasVoice) {
-            this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice);
-        }
-        
-        if (this.dom.voiceOffcanvasOverlay) {
-            this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice);
-        }
+    }
+    
+    // Esc untuk close voice panel
+    if (e.code === 'Escape' && this.dom.offcanvasVoice.classList.contains('active')) {
+        this.closeOffcanvasVoice();
+    }
+});
         
         if (document.getElementById('prayerBtn')) {
             document.getElementById('prayerBtn').addEventListener('click', () => {
@@ -2830,13 +3248,13 @@ class QuranAIApp {
         document.body.style.overflow = '';
     }
 
-    openOffcanvasVoice() {
-        this.voiceManager.openVoicePanel();
-    }
+openOffcanvasVoice() {
+    this.voiceManager.openVoicePanel();
+}
 
-    closeOffcanvasVoice() {
-        this.voiceManager.closeVoicePanel();
-    }
+closeOffcanvasVoice() {
+    this.voiceManager.closeVoicePanel();
+}
     
     openPrayerReadings() {
             const userMessage = "Tampilkan bacaan sholat";
