@@ -2298,7 +2298,9 @@ class VerseManager {
     async loadFullSurah(surahNumber) {
         try {
             const response = await fetch(`${Constants.WORKER_URL}/api/surah/${surahNumber}/full`);
-            if (!response.ok) throw new Error('Failed to load surah data');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
             
             const result = await response.json();
             
@@ -2308,40 +2310,136 @@ class VerseManager {
                 throw new Error(result.error || 'Invalid response format');
             }
         } catch (error) {
-            console.error('Error loading full surah:', error);
+            console.error(`Error loading surah ${surahNumber}:`, error);
             
-            // Fallback to the old method
-            const [arabicRes, translationRes] = await Promise.all([
-                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`),
-                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`)
-            ]);
-            
-            if (!arabicRes.ok || !translationRes.ok) {
-                throw new Error('Failed to fetch from external API');
+            // Fallback langsung ke API alquran.cloud
+            try {
+                console.log('Trying direct API call as fallback...');
+                const [arabicRes, translationRes] = await Promise.all([
+                    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`),
+                    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`)
+                ]);
+                
+                if (!arabicRes.ok || !translationRes.ok) {
+                    throw new Error(`Direct API failed: ${arabicRes.status}, ${translationRes.status}`);
+                }
+                
+                const arabicData = await arabicRes.json();
+                const translationData = await translationRes.json();
+                
+                return {
+                    id: arabicData.data.number,
+                    name: arabicData.data.name,
+                    englishName: arabicData.data.englishName,
+                    englishNameTranslation: arabicData.data.englishNameTranslation,
+                    revelationType: arabicData.data.revelationType,
+                    numberOfAyahs: arabicData.data.numberOfAyahs,
+                    ayahs: arabicData.data.ayahs.map((ayah, index) => ({
+                        numberInSurah: ayah.numberInSurah,
+                        arabic: ayah.text,
+                        translation: translationData.data.ayahs[index]?.text || 'Terjemahan tidak tersedia'
+                    }))
+                };
+            } catch (directError) {
+                console.error('Direct API fallback juga gagal:', directError);
+                throw new Error(`Gagal memuat surah ${surahNumber}: ${error.message}`);
             }
-            
-            const arabicData = await arabicRes.json();
-            const translationData = await translationRes.json();
-            
-            return {
-                id: arabicData.data.number,
-                name: arabicData.data.name,
-                nameArabic: arabicData.data.englishName,
-                englishName: arabicData.data.englishName,
-                englishNameTranslation: arabicData.data.englishNameTranslation,
-                revelationType: arabicData.data.revelationType,
-                numberOfAyahs: arabicData.data.numberOfAyahs,
-                ayahs: arabicData.data.ayahs.map((ayah, index) => ({
-                    numberInSurah: ayah.numberInSurah,
-                    arabic: ayah.text,
-                    translation: translationData.data.ayahs[index]?.text || ''
-                }))
-            };
         }
     }
     
-
-
+    async displayFullSurahInChat(surahNumber) {
+        const userMessage = `Tampilkan semua ayat Surah ${surahNumber}`;
+        this.chatManager.appendUserMessage(userMessage);
+    
+        if (this.state.isFirstMessage) {
+            this.chatManager.hideWelcomeState();
+            this.state.isFirstMessage = false;
+            if (this.state.currentChatId === null) {
+                this.chatManager.createNewChat(false);
+            }
+        }
+    
+        const typingEl = this.chatManager.showTypingIndicator();
+    
+        try {
+            const surahData = await this.loadFullSurah(surahNumber);
+            typingEl.remove();
+            
+            // Buat response HTML
+            const responseEl = document.createElement('div');
+            responseEl.className = 'ai-response';
+            
+            let html = `
+                <div class="verse-header">
+                    <span class="surah-title">${surahData.name} (${surahData.englishName})</span>
+                    <small>${surahData.numberOfAyahs} ayat • ${surahData.revelationType === 'Meccan' ? 'Makkiyah' : 'Madaniyah'}</small>
+                </div>
+                <div class="surah-description" style="margin-bottom: 1rem; font-style: italic; color: rgba(255,255,255,0.7);">
+                    ${surahData.englishNameTranslation}
+                </div>
+            `;
+            
+            // Tambahkan semua ayat
+            surahData.ayahs.forEach(ayah => {
+                html += `
+                    <div class="verse-container">
+                        <div class="verse-reference">
+                            ${surahData.englishName} (${surahData.id}:${ayah.numberInSurah})
+                        </div>
+                        <div class="arabic-text" dir="rtl">
+                            ${ayah.arabic}
+                        </div>
+                        <div class="translation-text">
+                            <strong>Terjemahan:</strong> ${ayah.translation}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            responseEl.innerHTML = html;
+            this.dom.chatContainer.appendChild(responseEl);
+            
+            // Save to history
+            this.chatManager.saveMessageToHistory(
+                userMessage,
+                {
+                    type: 'full_surah',
+                    surahData: surahData,
+                    html: html
+                },
+                'verse'
+            );
+            
+            this.chatManager.scrollToBottom();
+            
+        } catch (error) {
+            typingEl.remove();
+            this.chatManager.showError(
+                `Gagal memuat Surah ${surahNumber}: ${error.message}`
+            );
+        }
+    }
+    
+    if (this.dom.goVerseBtn) {
+        this.dom.goVerseBtn.addEventListener('click', () => {
+            const surahNumber = this.dom.surahSelect.value;
+            
+            // Jika ingin menampilkan semua ayat dari surah
+            this.verseManager.displayFullSurahInChat(surahNumber);
+            this.verseManager.closeActionSheet();
+        });
+    }
+    
+    if (this.dom.verseSelect) {
+        this.dom.verseSelect.addEventListener('change', () => {
+            const surahNumber = this.dom.surahSelect.value;
+            const verseNumber = this.dom.verseSelect.value;
+            
+            // Bisa tambahkan logika untuk menampilkan ayat tertentu
+            console.log(`Selected: Surah ${surahNumber}, Verse ${verseNumber}`);
+        });
+    }
+    
     async loadSurahData() {
         try {
             this.state.surahData = await ApiService.fetchSurahList();
