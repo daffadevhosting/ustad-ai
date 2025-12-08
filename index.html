@@ -137,7 +137,8 @@
             animation: fadeIn 0.5s ease;
             overflow-y: auto; 
             scroll-behavior: smooth;
-            scroll-padding-bottom: 120px;
+            scroll-padding-bottom: 80px;
+            height: auto;
             max-height: calc(100vh - 200px);
         }
 
@@ -849,13 +850,10 @@
         }
         
         .language-toggle-wrapper {
-            position: absolute;
-            left: 0;
-            bottom: 0;
+            position: relative;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin: 1.5rem;
         }
         
         .switch {
@@ -1601,7 +1599,13 @@
             <span class="logo-icon">stad</span>
              AI
         </div>
-        <div class="avatar">AI</div>
+            <div class="language-toggle-wrapper">
+                <label class="lang-label" id="langLabel">ID</label>
+                <label class="switch">
+                  <input type="checkbox" id="languageToggle">
+                  <span class="slider"></span>
+                </label>
+            </div>
     </header>
 
     <div class="offcanvas-overlay" id="offcanvasOverlay"></div>
@@ -1624,13 +1628,6 @@
                 <div class="no-chats-message">Belum ada riwayat percakapan</div>
             </div>
             
-            <div class="language-toggle-wrapper">
-                <label class="lang-label" id="langLabel">ID</label>
-                <label class="switch">
-                  <input type="checkbox" id="languageToggle">
-                  <span class="slider"></span>
-                </label>
-            </div>
         </div>
     </div>
     
@@ -2298,6 +2295,53 @@ class VerseManager {
         this.chatManager = chatManager;
     }
 
+    async loadFullSurah(surahNumber) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/surah/${surahNumber}/full`);
+            if (!response.ok) throw new Error('Failed to load surah data');
+            
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                return result.data;
+            } else {
+                throw new Error(result.error || 'Invalid response format');
+            }
+        } catch (error) {
+            console.error('Error loading full surah:', error);
+            
+            // Fallback to the old method
+            const [arabicRes, translationRes] = await Promise.all([
+                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`),
+                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`)
+            ]);
+            
+            if (!arabicRes.ok || !translationRes.ok) {
+                throw new Error('Failed to fetch from external API');
+            }
+            
+            const arabicData = await arabicRes.json();
+            const translationData = await translationRes.json();
+            
+            return {
+                id: arabicData.data.number,
+                name: arabicData.data.name,
+                nameArabic: arabicData.data.englishName,
+                englishName: arabicData.data.englishName,
+                englishNameTranslation: arabicData.data.englishNameTranslation,
+                revelationType: arabicData.data.revelationType,
+                numberOfAyahs: arabicData.data.numberOfAyahs,
+                ayahs: arabicData.data.ayahs.map((ayah, index) => ({
+                    numberInSurah: ayah.numberInSurah,
+                    arabic: ayah.text,
+                    translation: translationData.data.ayahs[index]?.text || ''
+                }))
+            };
+        }
+    }
+    
+
+
     async loadSurahData() {
         try {
             this.state.surahData = await ApiService.fetchSurahList();
@@ -2363,11 +2407,11 @@ class VerseManager {
     async getSpecificVerse() {
         const surahNumber = this.dom.surahSelect.value;
         const ayahNumber = parseInt(this.dom.verseSelect.value);
-
+    
         if (!surahNumber || !ayahNumber) return;
-
+    
         this.closeActionSheet();
-
+    
         const surahInfo = this.state.surahMap.get(parseInt(surahNumber));
         if (!surahInfo) {
             this.chatManager.showError(
@@ -2375,14 +2419,14 @@ class VerseManager {
             );
             return;
         }
-
+    
         const userMessage = this.chatManager.getLocalizedText(
             `Show ${surahInfo.name} verse ${ayahNumber}`,
             `${surahInfo.name} ayat ${ayahNumber}`
         );
-
+    
         this.chatManager.appendUserMessage(userMessage);
-
+    
         if (this.state.isFirstMessage) {
             this.chatManager.hideWelcomeState();
             this.state.isFirstMessage = false;
@@ -2390,35 +2434,61 @@ class VerseManager {
                 this.chatManager.createNewChat(false);
             }
         }
-
+    
         const typingEl = this.chatManager.showTypingIndicator();
-
+    
         try {
-            // Try primary API
-            const result = await ApiService.fetchSurahVerse(surahNumber, ayahNumber);
+            // Load full surah data
+            const surahData = await this.loadFullSurah(surahNumber);
             
-            if (result.success) {
-                typingEl.remove();
-                this.displayVerse(surahNumber, ayahNumber, result.arabicData, result.translationData, surahInfo);
-            } else {
-                // Try fallback
-                const fallbackResult = await ApiService.fetchSingleVerse(surahNumber, ayahNumber);
-                typingEl.remove();
-                
-                if (fallbackResult) {
-                    this.displayVerseFromSingleAPI(surahNumber, ayahNumber, fallbackResult, surahInfo);
-                } else {
-                    throw new Error('All API attempts failed');
-                }
+            // Find the specific ayah
+            const ayah = surahData.ayahs.find(a => a.numberInSurah === ayahNumber);
+            
+            if (!ayah) {
+                throw new Error(`Ayat ${ayahNumber} not found in Surah ${surahNumber}`);
             }
+    
+            typingEl.remove();
+            
+            // Display the verse
+            this.displayVerseResponse({
+                surahNumber: surahData.id,
+                surahName: surahData.name,
+                surahNameArabic: surahData.nameArabic,
+                ayahNumber: ayah.numberInSurah,
+                arabicText: ayah.arabic,
+                translationText: ayah.translation || this.chatManager.getLocalizedText('Translation not available', 'Terjemahan tidak tersedia'),
+                englishText: ayah.english || ''
+            }, true);
+    
         } catch (error) {
             typingEl.remove();
-            this.chatManager.showError(
-                this.chatManager.getLocalizedText(
-                    `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${error.message}`,
-                    `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${error.message}`
-                )
-            );
+            
+            // Fallback to old method if new one fails
+            console.warn('New method failed, falling back:', error);
+            
+            try {
+                const result = await ApiService.fetchSurahVerse(surahNumber, ayahNumber);
+                
+                if (result.success) {
+                    this.displayVerse(surahNumber, ayahNumber, result.arabicData, result.translationData, surahInfo);
+                } else {
+                    const fallbackResult = await ApiService.fetchSingleVerse(surahNumber, ayahNumber);
+                    
+                    if (fallbackResult) {
+                        this.displayVerseFromSingleAPI(surahNumber, ayahNumber, fallbackResult, surahInfo);
+                    } else {
+                        throw new Error('All API attempts failed');
+                    }
+                }
+            } catch (fallbackError) {
+                this.chatManager.showError(
+                    this.chatManager.getLocalizedText(
+                        `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${fallbackError.message}`,
+                        `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${fallbackError.message}`
+                    )
+                );
+            }
         }
     }
 
@@ -3035,10 +3105,22 @@ class QuranAIApp {
         }
         
         if (this.dom.surahSelect) {
-            this.dom.surahSelect.addEventListener('change', () => {
-                this.verseManager.populateVerseSelect();
-            });
-        }
+        this.dom.surahSelect.addEventListener('change', async () => {
+            this.verseManager.populateVerseSelect();
+            
+            const surahNumber = this.dom.surahSelect.value;
+            if (surahNumber) {
+                setTimeout(async () => {
+                    try {
+                        const surahData = await this.verseManager.loadFullSurah(surahNumber);
+                        console.log(`Pre-loaded Surah ${surahNumber}: ${surahData.name}`);
+                    } catch (error) {
+                        console.warn(`Failed to pre-load surah ${surahNumber}:`, error);
+                    }
+                }, 100);
+            }
+        });
+    }
         
         if (this.dom.goVerseBtn) {
             this.dom.goVerseBtn.addEventListener('click', () => {
