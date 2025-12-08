@@ -3235,9 +3235,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="https://elevenlabs.io/agent-widget/index.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize ElevenLabs Agent
-            const agentOptions = {
-                agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
+        const app = new App();
+        app.init();
+
+        const agentOptions = {
+            agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
                 voice: {
                     voiceId: "21m00Tcm4TlvDq8ikWAM",
                     modelId: "eleven_multilingual_v2",
@@ -3332,25 +3334,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             const agent = new window.ElevenLabs.Agent(agentOptions);
-            window.ustadAgent = agent;
-            const waveBtn = document.getElementById('waveBtn');
-            if (waveBtn) {
-                waveBtn.addEventListener('click', function() {
-                    agent.toggle();
-                });
-            }
-            agent.on('speaking', function() {
-                console.log('Agent sedang berbicara');
+        window.ustadAgent = agent;
+        const waveBtn = document.getElementById('waveBtn');
+        if (waveBtn) {
+            waveBtn.addEventListener('click', function() {
+                agent.toggle();
             });
-    
-            agent.on('listening', function() {
-                console.log('Agent sedang mendengarkan');
-            });
-    
-            agent.on('error', function(error) {
-                console.error('Agent error:', error);
-            });
+        }
+        agent.on('speaking', function() {
+            console.log('Agent sedang berbicara');
         });
+
+        agent.on('listening', function() {
+            console.log('Agent sedang mendengarkan');
+        });
+
+        agent.on('error', function(error) {
+            console.error('Agent error:', error);
+        });
+    });
     </script>
     </body>
 </html>
