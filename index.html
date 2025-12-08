@@ -1519,9 +1519,14 @@ class ApiService {
 
 // Chat Manager
 class ChatManager {
-    constructor(state, dom) {
+    constructor(state, dom, aiHandler) {
         this.state = state;
         this.dom = dom;
+        this.aiHandler = aiHandler;
+        this.verseManager = null;
+    }
+    setVerseManager(verseManager) {
+        this.verseManager = verseManager;
     }
 
     createNewChat(shouldLoad = true) {
@@ -1565,20 +1570,32 @@ class ChatManager {
     }
 
     renderChatMessages(messages) {
-        messages.forEach(message => {
-            this.appendUserMessage(message.user);
-            
-            if (message.type === 'verse') {
-                this.displayVerseResponse(message.ai, false);
-            } else if (message.type === 'error') {
-                this.showError(message.ai);
-            } else if (message.type === 'quran_ai') {
-                this.displayBackendAIResponse(message.user, message.ai, false);
+    messages.forEach(message => {
+
+        this.appendUserMessage(message.user);
+
+        if (message.type === 'verse') {
+            this.displayVerseResponse(message.ai, false);
+        } else if (message.type === 'error') {
+            this.showError(message.ai);
+        } else if (message.type === 'quran_ai') {
+
+            if (this.aiHandler) {
+                this.aiHandler.displayBackendAIResponse(message.user, message.ai, false);
             } else {
-                this.appendAIResponse(message.ai);
+
+                this.appendAIResponse(typeof message.ai === 'string' 
+                    ? message.ai 
+                    : (message.ai.answer || JSON.stringify(message.ai)));
             }
-        });
-    }
+        } else {
+
+            this.appendAIResponse(message.ai);
+        }
+    });
+
+    this.scrollToBottom();
+}
 
     appendUserMessage(text) {
         const messageEl = this.createMessageElement('user-message', text);
@@ -1968,9 +1985,13 @@ class VerseManager {
     }
 
     displayVerseResponse(aiResponse, saveToHistory = true) {
+    if (this.verseManager) {
+        this.verseManager.displayVerseResponse(aiResponse, saveToHistory);
+    } else {
+        // Fallback jika verseManager belum tersedia
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
-
+        
         const html = `
             <div class="verse-header">
                 <span class="surah-title">${aiResponse.surahNameArabic || aiResponse.surahName} (${aiResponse.surahNumber}:${aiResponse.ayahNumber})</span>
@@ -1979,16 +2000,16 @@ class VerseManager {
                 ${aiResponse.arabicText}
             </div>
             <div class="translation-text">
-                ${this.chatManager.getLocalizedText('Translation:', 'Terjemahan:')} ${aiResponse.translationText}
+                ${this.getLocalizedText('Translation:', 'Terjemahan:')} ${aiResponse.translationText}
             </div>
         `;
-
+        
         responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
-
+        
         if (saveToHistory) {
-            this.chatManager.saveMessageToHistory(
-                this.chatManager.getLocalizedText(
+            this.saveMessageToHistory(
+                this.getLocalizedText(
                     `Verse ${aiResponse.surahNumber}:${aiResponse.ayahNumber}`,
                     `Ayat ${aiResponse.surahNumber}:${aiResponse.ayahNumber}`
                 ),
@@ -1996,9 +2017,10 @@ class VerseManager {
                 'verse'
             );
         }
-
-        this.chatManager.scrollToBottom();
+        
+        this.scrollToBottom();
     }
+}
 
     openActionSheet() {
         this.dom.actionSheetOverlay.classList.add('active');
@@ -2231,8 +2253,18 @@ class AIResponseHandler {
         this.dom = dom;
         this.chatManager = chatManager;
     }
+    
+    setChatManager(chatManager) {
+        this.chatManager = chatManager;
+    }
 
     displayBackendAIResponse(userMessage, backendResponse, saveToHistory = true) {
+        // Pastikan kita memiliki DOM element
+        if (!this.dom.chatContainer) {
+            console.error('Chat container not found');
+            return;
+        }
+        
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
 
@@ -2241,7 +2273,7 @@ class AIResponseHandler {
         if (backendResponse.success) {
             html += `<div class="ai-text">${backendResponse.answer}</div>`;
 
-            if (backendResponse.verses_data?.length > 0) {
+            if (backendResponse.verses_data && backendResponse.verses_data.length > 0) {
                 html += `<div class="verses-section" style="margin-top: 1rem;">`;
                 backendResponse.verses_data.forEach(verse => {
                     html += `
@@ -2260,13 +2292,14 @@ class AIResponseHandler {
             }
 
             if (backendResponse.usage) {
-                html += this.renderUsageInfo(backendResponse.usage);
+                const usage = backendResponse.usage;
+                html += this.renderUsageInfo(usage);
             }
 
         } else {
-            html += `<div class="error-message">${backendResponse.error || this.chatManager.getLocalizedText('An error occurred', 'Terjadi kesalahan')}</div>`;
+            html += `<div class="error-message">${backendResponse.error || 'Terjadi kesalahan'}</div>`;
 
-            if (backendResponse.verses_data?.length > 0) {
+            if (backendResponse.verses_data && backendResponse.verses_data.length > 0) {
                 html += `<div class="ai-text">${backendResponse.answer || ''}</div>`;
                 html += `<div class="verses-section" style="margin-top: 1rem;">`;
                 backendResponse.verses_data.forEach(verse => {
@@ -2289,12 +2322,15 @@ class AIResponseHandler {
         responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
 
-        if (saveToHistory) {
+        if (saveToHistory && this.chatManager) {
             this.chatManager.saveMessageToHistory(userMessage, backendResponse, 'quran_ai');
         }
 
-        this.chatManager.scrollToBottom();
+        if (this.chatManager) {
+            this.chatManager.scrollToBottom();
+        }
     }
+
 
     renderUsageInfo(usage) {
         return `
@@ -2364,12 +2400,19 @@ class QuranAIApp {
     constructor() {
         this.state = new AppState();
         this.dom = new DomElements();
-        this.chatManager = new ChatManager(this.state, this.dom);
+
+        this.aiHandler = new AIResponseHandler(this.state, this.dom);
+
+        this.chatManager = new ChatManager(this.state, this.dom, this.aiHandler);
+
         this.verseManager = new VerseManager(this.state, this.dom, this.chatManager);
+
         this.voiceManager = new VoiceManager(this.state, this.dom, this.chatManager);
-        this.aiHandler = new AIResponseHandler(this.state, this.dom, this.chatManager);
-        
-        // Bind methods
+
+        this.chatManager.setVerseManager(this.verseManager);
+
+        this.aiHandler.setChatManager(this.chatManager);
+
         this.sendMessage = this.sendMessage.bind(this);
         this.toggleLanguage = this.toggleLanguage.bind(this);
         this.openOffcanvasMenu = this.openOffcanvasMenu.bind(this);
@@ -2378,6 +2421,7 @@ class QuranAIApp {
         this.closeOffcanvasVoice = this.closeOffcanvasVoice.bind(this);
         this.updateSendButtonState = this.updateSendButtonState.bind(this);
     }
+
 
     async init() {
         if (!this.dom.validate()) {
