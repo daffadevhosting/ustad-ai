@@ -1161,6 +1161,34 @@
                 padding: 0.75rem;
             }
         }
+
+.elevenlabs-agent-widget {
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.elevenlabs-agent-widget iframe {
+    border-radius: 20px !important;
+}
+
+/* Hide default launcher since we use our own button */
+.elevenlabs-agent-launcher {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .elevenlabs-agent-widget {
+        bottom: 80px !important;
+        right: 10px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 400px !important;
+    }
+}
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -1297,11 +1325,12 @@
 </div>
 
                 <div class="right-actions">
-                    <button class="wave-btn" id="waveBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/>
-                        </svg>
-                    </button>
+                  <button class="wave-btn" id="waveBtn" title="Voice Assistant">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+        <path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/>
+    </svg>
+    <span class="voice-status" style="font-size: 10px; position: absolute; bottom: -5px; right: 5px; color: #4285f4;"></span>
+</button>
                     
                     <button class="send-btn" id="sendBtn">
                         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -2052,6 +2081,18 @@ class VoiceManager {
         this.chatManager = chatManager;
         this.mediaStream = null;
         this.audioChunks = [];
+        this.isElevenLabsActive = window.ustadAgent ? true : false;
+    }
+
+    openVoicePanel() {
+        if (window.ustadAgent) {
+            window.ustadAgent.toggle();
+            return;
+        }
+        
+        this.dom.voiceOffcanvasOverlay.classList.add('active');
+        this.dom.offcanvasVoice.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     async startRecording() {
@@ -2509,6 +2550,21 @@ class QuranAIApp {
             this.verseManager.openActionSheet();
         });
         
+        if (this.dom.waveBtn) {
+            this.dom.waveBtn.addEventListener('click', () => {
+                if (window.ustadAgent) {
+                    // Use ElevenLabs Agent
+                    window.ustadAgent.toggle();
+                    
+                    // Hide custom voice panel if open
+                    this.closeOffcanvasVoice();
+                } else {
+                    // Fallback to custom voice recording
+                    this.openOffcanvasVoice();
+                }
+            });
+        }        
+        
         if (this.dom.closeActionSheet) {
             this.dom.closeActionSheet.addEventListener('click', () => {
                 this.verseManager.closeActionSheet();
@@ -2662,6 +2718,39 @@ class QuranAIApp {
     closeOffcanvasVoice() {
         this.voiceManager.closeVoicePanel();
     }
+
+    checkElevenLabsStatus() {
+            const waveBtn = this.dom.waveBtn;
+            if (!waveBtn) return;
+            
+            const statusSpan = waveBtn.querySelector('.voice-status');
+            if (statusSpan) {
+                if (window.ustadAgent) {
+                    statusSpan.textContent = 'AI';
+                    statusSpan.style.color = '#4285f4';
+                    waveBtn.title = 'ElevenLabs Voice Assistant (Klik untuk berbicara)';
+                } else {
+                    statusSpan.textContent = '🎤';
+                    statusSpan.style.color = '#34a853';
+                    waveBtn.title = 'Voice Recording (Custom)';
+                }
+            }
+        }
+
+    async init() {
+        if (!this.dom.validate()) {
+            console.error('Required DOM elements not found');
+            return;
+        }
+
+        this.setupEventListeners();
+        await this.loadInitialData();
+        this.updateUI();
+        this.checkElevenLabsStatus(); // Check status
+        
+        // Check again after a delay (in case widget loads async)
+        setTimeout(() => this.checkElevenLabsStatus(), 2000);
+    }
 }
 
 // Initialize application when DOM is ready
@@ -2673,24 +2762,125 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
     <div id="elevenlabs-agent-container"></div>
-    <script src="https://elevenlabs.com/agent-widget-v1.js"></script>
+    <script src="https://elevenlabs.io/agent-widget/index.js" defer></script>
     <script>
-        const myAgent = window.elevenlabs.createAgent({
-            agentId: "agent_9901k0vc5n8wf2aax7qeabby0w1a",
-            settings: {
-                enableHistory: true,
-                styles: {
-                    launcher: {
-                        display: 'none',
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize ElevenLabs Agent
+            const agentOptions = {
+                agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
+                voice: {
+                    voiceId: "21m00Tcm4TlvDq8ikWAM",
+                    modelId: "eleven_multilingual_v2",
+                    settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.8
                     }
+                },
+                ui: {
+                    customTheme: {
+                        primaryColor: "#4285f4",
+                        backgroundColor: "#1e1f20",
+                        textColor: "#ffffff"
+                    }
+                },
+                tools: {
+                    webhooks: [
+                        {
+                            name: "quran-ai-assistant-webhook",
+                            description: "AI assistant khusus untuk pertanyaan seputar Al-Quran",
+                            api_schema: {
+                                url: "https://ai-quran-workers.harisudahmalam.workers.dev/api/elevenlabs-webhook",
+                                method: "POST",
+                                request_body_schema: {
+                                    id: "quran_ai_request",
+                                    type: "object",
+                                    description: "Request body for Quran AI Assistant",
+                                    required: true,
+                                    properties: [
+                                        {
+                                            id: "input",
+                                            type: "string",
+                                            description: "Pertanyaan dari pengguna",
+                                            required: true,
+                                            dynamic_variable: "",
+                                            constant_value: ""
+                                        },
+                                        {
+                                            id: "session_id",
+                                            type: "string",
+                                            description: "Session ID percakapan",
+                                            required: false,
+                                            dynamic_variable: "",
+                                            constant_value: ""
+                                        },
+                                        {
+                                            id: "variables",
+                                            type: "object",
+                                            description: "Variables context",
+                                            required: false,
+                                            dynamic_variable: "",
+                                            constant_value: "",
+                                            properties: [
+                                                {
+                                                    id: "example_key",
+                                                    type: "string",
+                                                    description: "Example property for object type",
+                                                    required: false,
+                                                    dynamic_variable: "",
+                                                    constant_value: ""
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            id: "tool_calls",
+                                            type: "array",
+                                            description: "Tool calls array",
+                                            required: false,
+                                            dynamic_variable: "",
+                                            constant_value: "",
+                                            items: {
+                                                type: "object",
+                                                description: "Tool call item",
+                                                required: false,
+                                                properties: [
+                                                    {
+                                                        id: "tool_id",
+                                                        type: "string",
+                                                        description: "ID of the tool",
+                                                        required: false,
+                                                        dynamic_variable: "",
+                                                        constant_value: ""
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
                 }
+            };
+            const agent = new window.ElevenLabs.Agent(agentOptions);
+            window.ustadAgent = agent;
+            const waveBtn = document.getElementById('waveBtn');
+            if (waveBtn) {
+                waveBtn.addEventListener('click', function() {
+                    agent.toggle();
+                });
             }
+            agent.on('speaking', function() {
+                console.log('Agent sedang berbicara');
+            });
+    
+            agent.on('listening', function() {
+                console.log('Agent sedang mendengarkan');
+            });
+    
+            agent.on('error', function(error) {
+                console.error('Agent error:', error);
+            });
         });
-        myAgent.render({
-            elementId: "elevenlabs-agent-container" 
-        });
-        window.ustadAgent = myAgent; 
     </script>
-
     </body>
 </html>
