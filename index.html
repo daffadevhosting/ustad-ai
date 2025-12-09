@@ -22,6 +22,35 @@
         .hidden {
           display: none !important;
         }
+        
+        .gradient-container {
+            width: 100%;
+            height: auto;
+            position: relative;
+            background: linear-gradient(to bottom, 
+                rgba(19, 19, 20, 0) 0%,
+                rgba(19, 19, 20, 0.3) 20%,
+                rgba(19, 19, 20, 0.6) 40%,
+                rgba(19, 19, 20, 0.8) 60%,
+                rgba(19, 19, 20, 0.95) 80%,
+                #131314 100%
+            );
+        }
+
+        .gradient-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: radial-gradient(ellipse at top, 
+                rgba(255, 255, 255, 0.03) 0%,
+                transparent 70%
+            );
+            filter: blur(60px);
+        }
+        
         /* Header */
         .header {
             display: flex;
@@ -1848,6 +1877,274 @@ class AppState {
         return false;
     }
 }
+
+// Markdown Parser
+class MarkdownParser {
+    static parse(text) {
+        if (!text) return '';
+        
+        let html = text;
+        
+        // 1. Bold (**text** or __text__)
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        
+        // 2. Italic (*text* or _text_)
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        
+        // 3. Numbered lists (1. 2. etc) - Handle properly
+        html = this.formatNumberedLists(html);
+        
+        // 4. Unordered lists (- item or * item)
+        html = this.formatUnorderedLists(html);
+        
+        // 5. Paragraphs and line breaks
+        html = html.replace(/\n\n+/g, '</p><p>');
+        html = html.replace(/\n/g, '<br>');
+        html = `<p>${html}</p>`;
+        
+        // 6. Clean up empty paragraphs
+        html = html.replace(/<p><\/p>/g, '');
+        html = html.replace(/<p><br><\/p>/g, '');
+        
+        return html;
+    }
+    
+    static formatNumberedLists(text) {
+        // Split by lines
+        const lines = text.split('\n');
+        let inList = false;
+        let listHtml = '';
+        let result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Check if line starts with number pattern (1., 2., etc)
+            const listMatch = line.match(/^(\d+)\.\s+(.*)/);
+            
+            if (listMatch) {
+                if (!inList) {
+                    inList = true;
+                    listHtml = '<ol class="ai-list numbered">';
+                }
+                const itemText = listMatch[2];
+                listHtml += `<li>${this.parseInlineMarkdown(itemText)}</li>`;
+            } else {
+                if (inList) {
+                    inList = false;
+                    listHtml += '</ol>';
+                    result.push(listHtml);
+                    listHtml = '';
+                }
+                result.push(line);
+            }
+        }
+        
+        // Close any open list
+        if (inList) {
+            listHtml += '</ol>';
+            result.push(listHtml);
+        }
+        
+        return result.join('\n');
+    }
+    
+    static formatUnorderedLists(text) {
+        const lines = text.split('\n');
+        let inList = false;
+        let listHtml = '';
+        let result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Check if line starts with - or * for unordered list
+            const listMatch = line.match(/^[-*]\s+(.*)/);
+            
+            if (listMatch) {
+                if (!inList) {
+                    inList = true;
+                    listHtml = '<ul class="ai-list bulleted">';
+                }
+                const itemText = listMatch[1];
+                listHtml += `<li>${this.parseInlineMarkdown(itemText)}</li>`;
+            } else {
+                if (inList) {
+                    inList = false;
+                    listHtml += '</ul>';
+                    result.push(listHtml);
+                    listHtml = '';
+                }
+                result.push(line);
+            }
+        }
+        
+        if (inList) {
+            listHtml += '</ul>';
+            result.push(listHtml);
+        }
+        
+        return result.join('\n');
+    }
+    
+    static parseInlineMarkdown(text) {
+        let html = text;
+        // Bold
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        // Italic
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        // Arabic text (assuming rtl)
+        html = html.replace(/"(.*?)"/g, '<span dir="rtl" class="arabic-inline">$1</span>');
+        return html;
+    }
+}
+
+// Add CSS for markdown formatting
+const markdownStyles = `
+<style>
+.ai-response .ai-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.ai-response .ai-text p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.ai-response .ai-text p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-response .ai-text strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+.ai-response .ai-text em {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-response .ai-list {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+}
+
+.ai-response .ai-list.numbered {
+    list-style-type: decimal;
+}
+
+.ai-response .ai-list.bulleted {
+    list-style-type: disc;
+}
+
+.ai-response .ai-list li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.ai-response .ai-list li:last-child {
+    margin-bottom: 0;
+}
+
+.ai-response .arabic-inline {
+    font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+    font-size: 1.1em;
+    direction: rtl;
+    padding: 0 0.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.25rem;
+}
+
+.ai-response .verse-ref {
+    color: #4285f4;
+    font-weight: 500;
+    margin: 0 0.25rem;
+}
+
+.ai-response .ayah-number {
+    color: #34a853;
+    font-weight: 500;
+    margin: 0 0.125rem;
+}
+
+.ai-response .surah-name {
+    color: #4285f4;
+    font-weight: 500;
+}
+
+/* Headings in AI response */
+.ai-response h3, .ai-response h4, .ai-response h5 {
+    color: #4285f4;
+    margin: 1.25rem 0 0.75rem 0;
+    font-weight: 600;
+}
+
+.ai-response h3 {
+    font-size: 1.25rem;
+}
+
+.ai-response h4 {
+    font-size: 1.1rem;
+}
+
+.ai-response h5 {
+    font-size: 1rem;
+}
+
+/* Blockquote styling */
+.ai-response blockquote {
+    border-left: 3px solid #4285f4;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: rgba(66, 133, 244, 0.05);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-style: italic;
+}
+
+/* Code/inline code */
+.ai-response code {
+    font-family: 'Courier New', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+}
+
+/* Table styling */
+.ai-response table {
+    border-collapse: collapse;
+    margin: 1rem 0;
+    width: 100%;
+}
+
+.ai-response th, .ai-response td {
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+}
+
+.ai-response th {
+    background: rgba(66, 133, 244, 0.1);
+    font-weight: 600;
+}
+
+/* Clean up */
+.ai-response br {
+    line-height: 1.6;
+}
+</style>
+`;
+
+// Inject styles
+document.head.insertAdjacentHTML('beforeend', markdownStyles);
 
 // DOM Elements Cache
 class DomElements {
