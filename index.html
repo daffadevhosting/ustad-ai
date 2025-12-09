@@ -1680,7 +1680,6 @@
     
 <div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
 
-<!-- Replace seluruh offcanvas-voice dengan yang ini -->
 <div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
 <div class="offcanvas-voice" id="offcanvasVoice">
   <!-- Header minimal -->
@@ -1694,9 +1693,7 @@
       </button>
   </div>
   
-  <!-- Body minimal: hanya animasi dan tombol mic -->
   <div class="offcanvas-voice-body">
-      <!-- Wave Animation - Full screen -->
       <div class="wave-container" id="waveContainer">
           <div class="wave-bars">
               <div class="wave-bar"></div>
@@ -1709,7 +1706,6 @@
           </div>
       </div>
       
-      <!-- Tombol Mic - Floating di tengah bawah -->
       <div class="mic-button-container">
           <button class="mic-button" id="micButton">
               <i data-lucide="mic" class="mic-icon"></i>
@@ -1795,7 +1791,7 @@
         </div>
     </div>
 <script>
-  // Quran AI Chat Application - FIXED VERSION
+// Quran AI Chat Application - D1 VERSION
 // ===============================================
 
 // Constants
@@ -1804,7 +1800,6 @@ const Constants = {
     SURAH_API_URL: 'https://api.alquran.cloud/v1/surah',
     TRANSLATION_LANG: 'id.indonesian',
     ARABIC_FONT: 'quran-uthmani',
-    LOCAL_STORAGE_KEY: 'quranChatHistory',
     DEFAULT_LANGUAGE: 'id',
     SUPPORTED_LANGUAGES: {
         id: 'ID',
@@ -1823,6 +1818,16 @@ class AppState {
         this.surahMap = new Map();
         this.mediaRecorder = null;
         this.isRecording = false;
+        this.userId = this.generateUserId();
+    }
+
+    generateUserId() {
+        let userId = localStorage.getItem('quran_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('quran_user_id', userId);
+        }
+        return userId;
     }
 
     reset() {
@@ -1890,6 +1895,128 @@ class DomElements {
         ];
         
         return requiredElements.every(element => this[element] !== null);
+    }
+}
+
+// Database Service for D1
+class DatabaseService {
+    static async saveChat(chatId, title, messages, language = 'id', userId) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/chat-history`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': userId
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    title: title,
+                    messages: messages,
+                    language: language
+                })
+            });
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to save chat to database:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    static async loadChats(userId, limit = 50, offset = 0) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/chat-history?limit=${limit}&offset=${offset}`, {
+                headers: {
+                    'X-User-ID': userId
+                }
+            });
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to load chats from database:', error);
+            return { success: false, data: [] };
+        }
+    }
+
+    static async loadChat(chatId, userId) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/chat-history/${chatId}`, {
+                headers: {
+                    'X-User-ID': userId
+                }
+            });
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to load chat from database:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    static async deleteChat(chatId, userId) {
+        try {
+            const response = await fetch(`${Constants.WORKER_URL}/api/chat-history/${chatId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-User-ID': userId
+                }
+            });
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to delete chat from database:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Backup to localStorage if database fails
+    static saveToLocalStorageBackup(chatId, chatData) {
+        try {
+            const backupKey = `chat_backup_${chatId}`;
+            const backupList = JSON.parse(localStorage.getItem('chat_backup_list') || '[]');
+            
+            localStorage.setItem(backupKey, JSON.stringify(chatData));
+            
+            if (!backupList.includes(chatId)) {
+                backupList.push(chatId);
+                localStorage.setItem('chat_backup_list', JSON.stringify(backupList));
+            }
+        } catch (error) {
+            console.error('LocalStorage backup failed:', error);
+        }
+    }
+
+    static loadFromLocalStorageBackup() {
+        try {
+            const backupList = JSON.parse(localStorage.getItem('chat_backup_list') || '[]');
+            const chats = [];
+            
+            backupList.forEach(chatId => {
+                const chatData = localStorage.getItem(`chat_backup_${chatId}`);
+                if (chatData) {
+                    chats.push(JSON.parse(chatData));
+                }
+            });
+            
+            return chats.sort((a, b) => 
+                new Date(b.updatedAt || b.createdAt).getTime() - 
+                new Date(a.updatedAt || a.createdAt).getTime()
+            );
+        } catch (error) {
+            console.error('Failed to load from localStorage backup:', error);
+            return [];
+        }
+    }
+
+    static deleteFromLocalStorageBackup(chatId) {
+        try {
+            localStorage.removeItem(`chat_backup_${chatId}`);
+            const backupList = JSON.parse(localStorage.getItem('chat_backup_list') || '[]');
+            const newBackupList = backupList.filter(id => id !== chatId);
+            localStorage.setItem('chat_backup_list', JSON.stringify(newBackupList));
+        } catch (error) {
+            console.error('Failed to delete from localStorage backup:', error);
+        }
     }
 }
 
@@ -2029,58 +2156,130 @@ class ApiService {
     }
 }
 
-// Chat Manager
+// Chat Manager with D1 Integration
 class ChatManager {
     constructor(state, dom) {
         this.state = state;
         this.dom = dom;
     }
 
-    createNewChat(shouldLoad = true) {
+    async createNewChat(shouldLoad = true) {
+        const chatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const newChat = {
-            id: Date.now(),
+            id: chatId,
             title: this.getLocalizedText('New Chat', 'Obrolan Baru'),
             messages: [],
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            language: this.state.currentLanguage
         };
 
-        this.state.chatHistory.unshift(newChat);
-        this.saveToLocalStorage();
+        // Save to D1 database
+        const dbResult = await DatabaseService.saveChat(
+            chatId,
+            newChat.title,
+            newChat.messages,
+            newChat.language,
+            this.state.userId
+        );
 
-        if (shouldLoad) {
-            this.loadChat(newChat.id);
+        if (dbResult.success) {
+            // Add to local state
+            this.state.chatHistory.unshift(newChat);
+            
+            // Backup to localStorage
+            DatabaseService.saveToLocalStorageBackup(chatId, newChat);
+        } else {
+            console.error('Failed to save chat to database:', dbResult.error);
+            // Still add to local state and backup
+            this.state.chatHistory.unshift(newChat);
+            DatabaseService.saveToLocalStorageBackup(chatId, newChat);
         }
 
-        this.renderChatHistory();
+        if (shouldLoad) {
+            await this.loadChat(chatId);
+        }
+
+        await this.renderChatHistory();
         return newChat;
     }
 
-    loadChat(chatId) {
-        const chat = this.state.chatHistory.find(c => c.id === chatId);
-        if (!chat) return;
-
-        this.state.currentChatId = chatId;
-        this.state.isFirstMessage = chat.messages.length === 0;
-
-        this.clearChatContainer();
-
-        if (this.state.isFirstMessage) {
-            this.showWelcomeState();
-        } else {
-            this.hideWelcomeState();
-            chat.messages.forEach(message => {
-                if (message.type === 'verse') {
-                    this.displayVerseResponse(message.ai);
+    async loadChat(chatId) {
+        try {
+            // Try to load from local state first
+            let chat = this.state.chatHistory.find(c => c.id === chatId);
+            
+            // If not found in local state, try to load from database
+            if (!chat) {
+                const dbResult = await DatabaseService.loadChat(chatId, this.state.userId);
+                
+                if (dbResult.success && dbResult.data) {
+                    chat = {
+                        id: dbResult.data.chat_id,
+                        title: dbResult.data.title,
+                        messages: JSON.parse(dbResult.data.messages),
+                        createdAt: dbResult.data.created_at,
+                        updatedAt: dbResult.data.updated_at,
+                        language: dbResult.data.language || 'id'
+                    };
+                    
+                    // Add to local state
+                    this.state.chatHistory.push(chat);
                 } else {
-                    this.appendUserMessage(message.user);
-                    this.appendAIResponse(message.ai);
+                    // Try localStorage backup
+                    const backupChats = DatabaseService.loadFromLocalStorageBackup();
+                    chat = backupChats.find(c => c.id === chatId);
+                    
+                    if (chat) {
+                        this.state.chatHistory.push(chat);
+                    }
                 }
-            });
-        }
+            }
 
-        this.renderChatHistory();
-        this.updateChatTitle(chat.title);
-        this.scrollToBottom();
+            if (!chat) {
+                console.error('Chat not found:', chatId);
+                this.showError('Percakapan tidak ditemukan');
+                return;
+            }
+
+            this.state.currentChatId = chat.id;
+            this.state.isFirstMessage = chat.messages.length === 0;
+
+            this.clearChatContainer();
+
+            if (this.state.isFirstMessage) {
+                this.showWelcomeState();
+            } else {
+                this.hideWelcomeState();
+                chat.messages.forEach(message => {
+                    if (message.type === 'verse') {
+                        this.displayVerseResponse(message.ai);
+                    } else if (message.type === 'prayer') {
+                        if (message.ai && message.ai.data) {
+                            this.displayPrayerReading(message.ai.data);
+                        } else {
+                            this.displayPrayerAIResponse(message.ai);
+                        }
+                    } else {
+                        this.appendUserMessage(message.user);
+                        if (typeof message.ai === 'string') {
+                            this.appendAIResponse(message.ai);
+                        } else if (message.ai && message.ai.answer) {
+                            this.appendAIResponse(message.ai.answer);
+                        } else if (message.ai && message.ai.response) {
+                            this.appendAIResponse(message.ai.response);
+                        }
+                    }
+                });
+            }
+
+            await this.renderChatHistory();
+            this.updateChatTitle(chat.title);
+            this.scrollToBottom();
+        } catch (error) {
+            console.error('Failed to load chat:', error);
+            this.showError('Gagal memuat percakapan');
+        }
     }
 
     appendUserMessage(text) {
@@ -2181,31 +2380,44 @@ class ChatManager {
         }, 10);
     }
 
-    saveToLocalStorage() {
+    async loadFromDatabase() {
         try {
-            localStorage.setItem(
-                Constants.LOCAL_STORAGE_KEY, 
-                JSON.stringify(this.state.chatHistory)
-            );
-        } catch (error) {
-            console.error('Failed to save to localStorage:', error);
-        }
-    }
-
-    loadFromLocalStorage() {
-        try {
-            const history = localStorage.getItem(Constants.LOCAL_STORAGE_KEY);
-            if (history) {
-                this.state.chatHistory = JSON.parse(history);
+            const result = await DatabaseService.loadChats(this.state.userId, 50, 0);
+            
+            if (result.success && result.data) {
+                // Transform database data to local format
+                this.state.chatHistory = result.data.map(dbChat => ({
+                    id: dbChat.chat_id,
+                    title: dbChat.title,
+                    messages: JSON.parse(dbChat.messages),
+                    createdAt: dbChat.created_at,
+                    updatedAt: dbChat.updated_at,
+                    language: dbChat.language || 'id'
+                })).sort((a, b) => 
+                    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                );
+                
+                return true;
+            } else {
+                // Fallback to localStorage backup
+                this.state.chatHistory = DatabaseService.loadFromLocalStorageBackup();
+                return false;
             }
         } catch (error) {
-            console.error('Failed to load from localStorage:', error);
-            this.state.chatHistory = [];
+            console.error('Failed to load chats from database:', error);
+            // Fallback to localStorage backup
+            this.state.chatHistory = DatabaseService.loadFromLocalStorageBackup();
+            return false;
         }
     }
 
-    renderChatHistory() {
+    async renderChatHistory() {
         if (!this.dom.chatHistoryList) return;
+
+        // If no data, load from database
+        if (this.state.chatHistory.length === 0) {
+            await this.loadFromDatabase();
+        }
 
         this.dom.chatHistoryList.innerHTML = '';
 
@@ -2226,9 +2438,9 @@ class ChatManager {
             item.innerHTML = `
                 <div class="chat-preview">
                     <div class="chat-preview-title">${chat.title}</div>
-                    <div class="chat-preview-date">${this.formatDate(chat.createdAt)}</div>
+                    <div class="chat-preview-date">${this.formatDate(chat.updatedAt || chat.createdAt)}</div>
                 </div>
-                <button class="delete-chat-btn" data-chat-id="${chat.id}">
+                <button class="delete-chat-btn" data-chat-id="${chat.id}" title="${this.getLocalizedText('Delete', 'Hapus')}">
                     <svg width="18" height="18" viewBox="0 0 24 24">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
@@ -2247,7 +2459,7 @@ class ChatManager {
         });
     }
 
-    deleteChat(chatId) {
+    async deleteChat(chatId) {
         const message = this.getLocalizedText(
             'Are you sure you want to delete this conversation?',
             'Apakah Anda yakin ingin menghapus percakapan ini?'
@@ -2256,26 +2468,33 @@ class ChatManager {
         if (!confirm(message)) return;
 
         const wasActiveChat = this.state.currentChatId === chatId;
+        
+        // Delete from database
+        await DatabaseService.deleteChat(chatId, this.state.userId);
+        
+        // Delete from localStorage backup
+        DatabaseService.deleteFromLocalStorageBackup(chatId);
+        
+        // Remove from local state
         this.state.chatHistory = this.state.chatHistory.filter(chat => chat.id !== chatId);
-        this.saveToLocalStorage();
 
         if (wasActiveChat) {
             if (this.state.chatHistory.length > 0) {
-                this.loadChat(this.state.chatHistory[0].id);
+                await this.loadChat(this.state.chatHistory[0].id);
             } else {
                 this.state.reset();
                 this.showWelcomeState();
             }
         }
         
-        this.renderChatHistory();
+        await this.renderChatHistory();
     }
 
-    saveMessageToHistory(userMessage, aiResponse, type = 'text') {
+    async saveMessageToHistory(userMessage, aiResponse, type = 'text') {
         let currentChat = this.state.chatHistory.find(c => c.id === this.state.currentChatId);
 
         if (!currentChat) {
-            currentChat = this.createNewChat(false);
+            currentChat = await this.createNewChat(false);
             this.state.currentChatId = currentChat.id;
         }
 
@@ -2292,11 +2511,30 @@ class ChatManager {
             timestamp: new Date().toISOString()
         });
 
+        currentChat.updatedAt = new Date().toISOString();
+        currentChat.language = this.state.currentLanguage;
+
+        // Save to database
+        const dbResult = await DatabaseService.saveChat(
+            currentChat.id,
+            currentChat.title,
+            currentChat.messages,
+            currentChat.language,
+            this.state.userId
+        );
+
+        if (!dbResult.success) {
+            console.error('Failed to save message to database:', dbResult.error);
+        }
+
+        // Backup to localStorage
+        DatabaseService.saveToLocalStorageBackup(currentChat.id, currentChat);
+
+        // Update local state
         this.state.chatHistory = this.state.chatHistory.filter(c => c.id !== currentChat.id);
         this.state.chatHistory.unshift(currentChat);
 
-        this.saveToLocalStorage();
-        this.renderChatHistory();
+        await this.renderChatHistory();
     }
 
     formatDate(dateString) {
@@ -3032,11 +3270,15 @@ class QuranAIApp {
     }
 
     async loadInitialData() {
-        this.chatManager.loadFromLocalStorage();
+        // Load chat history from database
+        await this.chatManager.loadFromDatabase();
+        
+        // Load surah data
         await this.verseManager.loadSurahData();
         
+        // Load first chat if available
         if (this.state.chatHistory.length > 0) {
-            this.chatManager.loadChat(this.state.chatHistory[0].id);
+            await this.chatManager.loadChat(this.state.chatHistory[0].id);
         }
     }
 
@@ -3118,50 +3360,49 @@ class QuranAIApp {
             });
         }
         
-// Voice panel events
-if (this.dom.waveBtn) {
-    this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice.bind(this));
-}
-
-if (this.dom.closeOffcanvasVoice) {
-    this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice.bind(this));
-}
-
-if (this.dom.voiceOffcanvasOverlay) {
-    this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice.bind(this));
-}
-
-// Mic button event
-document.addEventListener('click', (e) => {
-    if (e.target.closest('#micButton')) {
-        this.voiceManager.toggleVoiceRecording();
-    }
-});
-
-// Keyboard shortcut untuk voice panel
-document.addEventListener('keydown', (e) => {
-    // Ctrl + Space untuk buka/close voice panel
-    if (e.ctrlKey && e.code === 'Space') {
-        e.preventDefault();
-        if (this.dom.offcanvasVoice.classList.contains('active')) {
-            this.closeOffcanvasVoice();
-        } else {
-            this.openOffcanvasVoice();
+        // Voice panel events
+        if (this.dom.waveBtn) {
+            this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice.bind(this));
         }
-    }
-    
-    // Esc untuk close voice panel
-    if (e.code === 'Escape' && this.dom.offcanvasVoice.classList.contains('active')) {
-        this.closeOffcanvasVoice();
-    }
-});
+
+        if (this.dom.closeOffcanvasVoice) {
+            this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+        }
+
+        if (this.dom.voiceOffcanvasOverlay) {
+            this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+        }
+
+        // Mic button event
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#micButton')) {
+                this.voiceManager.toggleVoiceRecording();
+            }
+        });
+
+        // Keyboard shortcut untuk voice panel
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + Space untuk buka/close voice panel
+            if (e.ctrlKey && e.code === 'Space') {
+                e.preventDefault();
+                if (this.dom.offcanvasVoice.classList.contains('active')) {
+                    this.closeOffcanvasVoice();
+                } else {
+                    this.openOffcanvasVoice();
+                }
+            }
+            
+            // Esc untuk close voice panel
+            if (e.code === 'Escape' && this.dom.offcanvasVoice.classList.contains('active')) {
+                this.closeOffcanvasVoice();
+            }
+        });
         
         if (document.getElementById('prayerBtn')) {
             document.getElementById('prayerBtn').addEventListener('click', () => {
                 this.openPrayerReadings();
             });
         }
- 
     }
 
     async sendMessage() {
@@ -3178,7 +3419,7 @@ document.addEventListener('keydown', (e) => {
             this.chatManager.hideWelcomeState();
             this.state.isFirstMessage = false;
             if (this.state.currentChatId === null) {
-                this.chatManager.createNewChat(false);
+                await this.chatManager.createNewChat(false);
             }
         }
 
@@ -3189,7 +3430,7 @@ document.addEventListener('keydown', (e) => {
             typingEl.remove();
             
             this.aiHandler.displayAIResponse(response);
-            this.chatManager.saveMessageToHistory(userMessage, response, 'quran_ai');
+            await this.chatManager.saveMessageToHistory(userMessage, response, 'quran_ai');
             
         } catch (error) {
             typingEl.remove();
@@ -3248,78 +3489,78 @@ document.addEventListener('keydown', (e) => {
         document.body.style.overflow = '';
     }
 
-openOffcanvasVoice() {
-    this.voiceManager.openVoicePanel();
-}
+    openOffcanvasVoice() {
+        this.voiceManager.openVoicePanel();
+    }
 
-closeOffcanvasVoice() {
-    this.voiceManager.closeVoicePanel();
-}
+    closeOffcanvasVoice() {
+        this.voiceManager.closeVoicePanel();
+    }
     
     openPrayerReadings() {
-            const userMessage = "Tampilkan bacaan sholat";
-            this.chatManager.appendUserMessage(userMessage);
-        
-            if (this.state.isFirstMessage) {
-                this.chatManager.hideWelcomeState();
-                this.state.isFirstMessage = false;
-                if (this.state.currentChatId === null) {
-                    this.chatManager.createNewChat(false);
-                }
+        const userMessage = "Tampilkan bacaan sholat";
+        this.chatManager.appendUserMessage(userMessage);
+    
+        if (this.state.isFirstMessage) {
+            this.chatManager.hideWelcomeState();
+            this.state.isFirstMessage = false;
+            if (this.state.currentChatId === null) {
+                this.chatManager.createNewChat(false);
             }
-        
-            const typingEl = this.chatManager.showTypingIndicator();
-        
-            ApiService.fetchPrayerSequence()
-                .then(response => {
-                    typingEl.remove();
+        }
+    
+        const typingEl = this.chatManager.showTypingIndicator();
+    
+        ApiService.fetchPrayerSequence()
+            .then(response => {
+                typingEl.remove();
+                
+                if (response.success && response.data) {
+                    const responseEl = document.createElement('div');
+                    responseEl.className = 'ai-response';
                     
-                    if (response.success && response.data) {
-                        const responseEl = document.createElement('div');
-                        responseEl.className = 'ai-response';
-                        
-                        let html = `
-                            <div style="margin-bottom: 1.5rem;">
-                                <h3 style="color: #4285f4; margin-bottom: 1rem;">Bacaan Sholat Lengkap</h3>
-                                <p style="margin-bottom: 1rem;">Berikut adalah bacaan-bacaan sholat sesuai urutan dalam sholat:</p>
+                    let html = `
+                        <div style="margin-bottom: 1.5rem;">
+                            <h3 style="color: #4285f4; margin-bottom: 1rem;">Bacaan Sholat Lengkap</h3>
+                            <p style="margin-bottom: 1rem;">Berikut adalah bacaan-bacaan sholat sesuai urutan dalam sholat:</p>
+                        </div>
+                    `;
+                    
+                    response.data.forEach((prayer, index) => {
+                        html += `
+                            <div class="prayer-item" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 0.75rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <span style="font-weight: 500; color: #4285f4;">${index + 1}. ${prayer.name}</span>
+                                    <span style="font-size: 0.8rem; background: rgba(66, 133, 244, 0.2); padding: 0.25rem 0.5rem; border-radius: 1rem;">${prayer.category}</span>
+                                </div>
+                                <div dir="rtl" style="font-size: 1.3rem; margin-bottom: 0.5rem; text-align: right;">${prayer.arabic}</div>
+                                <div style="font-style: italic; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">${prayer.latin}</div>
+                                <div style="margin-bottom: 0.5rem;"><strong>Terjemahan:</strong> ${prayer.translation}</div>
+                                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${prayer.description}</div>
                             </div>
                         `;
-                        
-                        response.data.forEach((prayer, index) => {
-                            html += `
-                                <div class="prayer-item" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 0.75rem;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                                        <span style="font-weight: 500; color: #4285f4;">${index + 1}. ${prayer.name}</span>
-                                        <span style="font-size: 0.8rem; background: rgba(66, 133, 244, 0.2); padding: 0.25rem 0.5rem; border-radius: 1rem;">${prayer.category}</span>
-                                    </div>
-                                    <div dir="rtl" style="font-size: 1.3rem; margin-bottom: 0.5rem; text-align: right;">${prayer.arabic}</div>
-                                    <div style="font-style: italic; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">${prayer.latin}</div>
-                                    <div style="margin-bottom: 0.5rem;"><strong>Terjemahan:</strong> ${prayer.translation}</div>
-                                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${prayer.description}</div>
-                                </div>
-                            `;
-                        });
-                        
-                        responseEl.innerHTML = html;
-                        this.dom.chatContainer.appendChild(responseEl);
-                        
-                        this.chatManager.saveMessageToHistory(
-                            userMessage,
-                            { type: 'prayer_sequence', data: response.data },
-                            'prayer'
-                        );
-                        
-                    } else {
-                        this.chatManager.showError('Gagal memuat bacaan sholat');
-                    }
+                    });
                     
-                    this.chatManager.scrollToBottom();
-                })
-                .catch(error => {
-                    typingEl.remove();
-                    this.chatManager.showError('Error: ' + error.message);
-                });
-        }
+                    responseEl.innerHTML = html;
+                    this.dom.chatContainer.appendChild(responseEl);
+                    
+                    this.chatManager.saveMessageToHistory(
+                        userMessage,
+                        { type: 'prayer_sequence', data: response.data },
+                        'prayer'
+                    );
+                    
+                } else {
+                    this.chatManager.showError('Gagal memuat bacaan sholat');
+                }
+                
+                this.chatManager.scrollToBottom();
+            })
+            .catch(error => {
+                typingEl.remove();
+                this.chatManager.showError('Error: ' + error.message);
+            });
+    }
 }
 
 // Initialize application when DOM is ready
