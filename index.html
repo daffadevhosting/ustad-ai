@@ -171,13 +171,18 @@
             scroll-padding-bottom: 80px;
             height: auto;
             max-height: calc(100vh - 200px);
+            scrollbar-width: none;
         }
 
         .chat-container.active {
+            scrollbar-width: none;
             display: flex;
             width: 100%;
             max-width: 800px;
             margin: auto;
+        }
+        .chat-container::-webkit-scrollbar {
+            display: none;
         }
 
         @keyframes fadeIn {
