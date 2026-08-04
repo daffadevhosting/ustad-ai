@@ -4,7 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ustad - AI Quran</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.css">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
     <style>
+        :root {
+            --bg-main: #09090b;
+            --bg-surface: #141417;
+            --bg-surface-hover: #1c1c21;
+            --bg-card: #18181b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-focus: #3b82f6;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-green: #10b981;
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --radius-lg: 1.25rem;
+            --radius-md: 0.875rem;
+            --radius-sm: 0.5rem;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,71 +40,75 @@
         }
 
         body {
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #131314;
-            color: white;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-        .hidden {
-          display: none !important;
-        }
-        
-        .gradient-container {
-            width: 100%;
-            height: auto;
-            position: relative;
-            background: linear-gradient(to bottom, 
-                rgba(19, 19, 20, 0) 0%,
-                rgba(19, 19, 20, 0.3) 20%,
-                rgba(19, 19, 20, 0.6) 40%,
-                rgba(19, 19, 20, 0.8) 60%,
-                rgba(19, 19, 20, 0.95) 80%,
-                #131314 100%
-            );
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .gradient-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 40%;
-            background: radial-gradient(ellipse at top, 
-                rgba(255, 255, 255, 0.03) 0%,
-                transparent 70%
-            );
-            filter: blur(60px);
+        .hidden {
+            display: none !important;
         }
-        
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
         /* Header */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 1.25rem;
+            padding: 0.875rem 1.5rem;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: #131314;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
             z-index: 100;
         }
 
         .menu-icon {
             cursor: pointer;
             padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+
+        .menu-icon:hover {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .menu-icon span {
             display: block;
-            width: 20px;
+            width: 18px;
             height: 2px;
-            background: white;
-            margin: 4px 0;
-            transition: 0.3s;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .menu-icon.active span:nth-child(1) {
@@ -85,45 +117,102 @@
 
         .menu-icon.active span:nth-child(2) {
             opacity: 0;
+            transform: translateX(-10px);
         }
 
         .menu-icon.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -6px);
+            transform: rotate(-45deg) translate(5px, -5px);
         }
 
         .logo {
-            font-size: 1.25rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: var(--text-primary);
         }
 
         .logo-icon {
-            color: #4285f4;
+            color: var(--accent-blue);
+            font-weight: 700;
         }
 
-        .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Language Toggle */
+        .language-toggle-wrapper {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
+            gap: 8px;
+            background: var(--bg-surface);
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+        }
+
+        .lang-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
             cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-secondary);
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
+            background-color: #ffffff;
         }
 
         /* Main Content */
         .main-content {
             position: relative;
-            flex: 1 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            padding-top: 60px;
-            padding-bottom: 140px;
+            padding-top: 64px;
+            padding-bottom: 120px;
+            max-width: 840px;
+            width: 100%;
+            margin: 0 auto;
         }
 
         /* Welcome State */
@@ -133,78 +222,80 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 2rem 1.5rem;
+            text-align: center;
             transition: opacity 0.3s ease, transform 0.3s ease;
+            min-height: calc(100vh - 200px);
         }
 
         .welcome-state.hidden {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateY(-16px);
             pointer-events: none;
             position: absolute;
         }
 
         .stad-sparkle {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1.5rem;
+            width: 52px;
+            height: 52px;
+            margin-bottom: 1.25rem;
+            filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.25));
+        }
+
+        .welcome-salutation {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.375rem;
         }
 
         .welcome-text {
-            text-align: center;
-            font-size: 100%;
-            color: rgba(255,255,255,0.8);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            max-width: 460px;
+            line-height: 1.35;
         }
 
-        /* Chat State */
+        /* Chat Container */
         .chat-container {
             position: relative;
-            flex: 1 1;
-            padding: 1rem;
-            padding-bottom: 2rem;
+            flex: 1;
+            padding: 1.5rem 1rem;
             display: none;
             flex-direction: column;
             gap: 1.5rem;
-            animation: fadeIn 0.5s ease;
             overflow-y: auto; 
             scroll-behavior: smooth;
-            scroll-padding-bottom: 80px;
-            height: auto;
-            max-height: calc(100vh - 200px);
-            scrollbar-width: none;
+            width: 100%;
         }
 
         .chat-container.active {
-            scrollbar-width: none;
             display: flex;
-            width: 100%;
-            max-width: 800px;
-            margin: auto;
-            margin-top: 70px;
-        }
-        .chat-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         /* User Message */
         .user-message {
             align-self: flex-end;
-            background: #3c4043;
-            padding: 0.75rem 1rem;
-            border-radius: 1.25rem;
-            max-width: 80%;
-            animation: slideInRight 0.4s ease;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.875rem 1.25rem;
+            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+            max-width: 82%;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes slideInRight {
             from {
                 opacity: 0;
-                transform: translateX(20px);
+                transform: translateX(16px);
             }
             to {
                 opacity: 1;
@@ -214,16 +305,24 @@
 
         /* AI Response */
         .ai-response {
+            align-self: flex-start;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+            padding: 1.25rem;
+            width: 100%;
+            max-width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            animation: fadeInUp 0.5s ease 0.3s both;
+            gap: 0.875rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(15px);
+                transform: translateY(12px);
             }
             to {
                 opacity: 1;
@@ -231,236 +330,137 @@
             }
         }
 
-        .ai-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .ai-star {
-            width: 24px;
-            height: 24px;
-        }
-
-        .sound-icon {
-            background:#131314;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            padding: 0.5rem;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        .sound-icon:hover {
-            opacity: 1;
-        }
-
         .ai-text {
-            font-size: 1rem;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            margin-top: 0.5rem;
-        }
-
-        .action-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            opacity: 0.6;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-
-        .action-btn:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .more-btn {
-            margin-left: auto;
-        }
-
-        /* Disclaimer */
-        .disclaimer {
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.5);
-            margin-top: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: var(--text-primary);
         }
 
         /* Input Area */
         .input-area {
-            max-width:500px;
-            margin: auto;
+            max-width: 800px;
+            width: calc(100% - 2rem);
+            margin: 0 auto;
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #131314;
-            padding: 1rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            bottom: 1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 23, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1rem;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 50;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
         }
 
-        .input-area.chat-mode {
-            background: #1e1f20;
-            border-top-left-radius: 1.5rem;
-            border-top-right-radius: 1.5rem;
+        .input-area:focus-within {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.2);
         }
 
         .input-wrapper {
-            background: #1e1f20;
-            border-radius: 1.5rem;
-            padding: 1rem 1.25rem;
-            transition: all 0.3s ease;
-        }
-
-        .input-area.chat-mode .input-wrapper {
-            background: transparent;
-            padding: 0.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .input-field {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
         }
 
         .input-field textarea {
-            flex: 1;
+            width: 100%;
             background: transparent;
             border: none;
-            color: white;
-            font-size: 1rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
             outline: none;
             resize: none; 
-            overflow: hidden;
-            padding: 0; 
-            margin-top: 4px;
-            max-height: 100px;
+            overflow-y: auto;
+            padding: 0.25rem 0; 
+            max-height: 120px;
             font-family: inherit;
+            line-height: 1.5;
         }
 
         .input-field textarea::placeholder {
-            color: rgba(255,255,255,0.5);
+            color: var(--text-muted);
         }
 
         .input-actions {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 0.75rem;
-            transition: all 0.3s ease;
+            padding-top: 0.375rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        .input-area.chat-mode .input-actions {
-            margin-top: 0.5rem;
-        }
-
-        .left-actions {
+        .left-actions, .right-actions {
             display: flex;
-            gap: 0.5rem;
-        }
-
-        .action-icon {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            opacity: 0.7;
-            transition: all 0.2s;
-        }
-
-        .action-icon:hover {
-            opacity: 1;
-        }
-
-        .right-actions {
-            width: auto;
-            display: flex;
-            gap: 0.5rem;
             align-items: center;
+            gap: 0.5rem;
         }
 
-        .model-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 1.5rem;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .model-btn:hover {
-            background: rgba(255,255,255,0.15);
-        }
-
-        .wave-btn, .verse-btn, .pry-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            width: 40px;
-            height: 40px;
+        .verse-btn, .pry-btn, .wave-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
         }
 
-        .wave-btn.hidden {
-            display: none;
+        .verse-btn:hover, .pry-btn:hover, .wave-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .send-btn {
-            background: #4285f4;
+            background: var(--accent-blue);
             border: none;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
             display: none; 
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             transform: scale(0);
+            color: #ffffff;
         }
 
         .send-btn.visible {
             display: flex;
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0); }
-            to { transform: scale(1); }
+            transform: scale(1);
         }
 
         .send-btn:hover {
-            background: #5a95f5;
+            background: var(--accent-blue-hover);
         }
 
+        /* Typing indicator */
         .typing-indicator {
             display: flex;
-            gap: 4px;
-            padding: 1rem 0;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 0;
         }
 
         .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #4285f4;
+            width: 6px;
+            height: 6px;
+            background: var(--accent-blue);
             border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out;
         }
@@ -470,116 +470,109 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
         @keyframes bounce {
-            0%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-8px); }
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-6px); opacity: 1; }
         }
-        
-        svg {
-            fill: white;
-        }
-        
-        .action-sheet-overlay {
+
+        /* Modals & Sheets Overlay */
+        .action-sheet-overlay, .offcanvas-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 400;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 200;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            transition: all 0.3s ease;
         }
-        
-        .action-sheet-overlay.active {
+
+        .action-sheet-overlay.active, .offcanvas-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-        
+
+        /* Action Sheet (Verse Picker) */
         .action-sheet {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            max-width: 500px;
+            bottom: 0; left: 0; right: 0;
+            max-width: 520px;
             margin: 0 auto;
-            background: #1e1f20;
-            z-index: 500;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            z-index: 300;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-top-left-radius: 1.5rem;
-            border-top-right-radius: 1.5rem;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border-top-left-radius: var(--radius-lg);
+            border-top-right-radius: var(--radius-lg);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
         }
-        
+
         .action-sheet.active {
             transform: translateY(0);
         }
-        
+
         .action-sheet-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .action-sheet-title {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #4285f4;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        .close-action-sheet {
+        .close-action-sheet, .close-offcanvas {
             background: none;
             border: none;
-            color: white;
+            color: var(--text-muted);
             font-size: 1.5rem;
             cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.2s;
             padding: 0.25rem;
+            transition: color 0.2s;
         }
 
-        .close-action-sheet:hover {
-            opacity: 1;
+        .close-action-sheet:hover, .close-offcanvas:hover {
+            color: var(--text-primary);
         }
 
         .action-sheet-body {
-            padding: 1.5rem 1.25rem 2rem;
+            padding: 1.25rem;
         }
 
         .verse-selection-controls {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 0.875rem;
+            margin-bottom: 1.25rem;
         }
 
         .verse-selection-controls label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: -0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: -0.375rem;
         }
 
         .styled-select {
             width: 100%;
-            padding: 0.75rem;
-            background: #3c4043;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+            padding: 0.75rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            outline: none;
             cursor: pointer;
             transition: border-color 0.2s;
         }
 
         .styled-select:focus {
-            outline: none;
-            border-color: #4285f4;
+            border-color: var(--accent-blue);
         }
 
         .select-verse-btn {
@@ -588,52 +581,33 @@
             justify-content: center;
             gap: 0.5rem;
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: #4285f4;
+            padding: 0.875rem 1rem;
+            background: var(--accent-blue);
             border: none;
-            color: white;
-            border-radius: 0.75rem;
+            color: #ffffff;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
             transition: background 0.2s;
         }
 
         .select-verse-btn:hover {
-            background: #5a95f5;
+            background: var(--accent-blue-hover);
         }
 
-        /* OFF CANVAS SIDEBAR */
-        .offcanvas-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 200;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .offcanvas-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
+        /* Sidebar Offcanvas */
         .offcanvas-sidebar {
             position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
+            top: 0; left: 0; bottom: 0;
             width: 320px;
-            background: #1e1f20;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
             z-index: 300;
             transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
         }
 
         .offcanvas-sidebar.active {
@@ -641,35 +615,20 @@
         }
 
         .offcanvas-header {
-            padding: 1.5rem 1.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .offcanvas-title {
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
-
-        .close-offcanvas {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-            padding: 0.25rem;
-        }
-
-        .close-offcanvas:hover {
-            opacity: 1;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .offcanvas-body {
-            position: relative;
             flex: 1;
             padding: 1rem;
             overflow-y: auto;
@@ -681,999 +640,330 @@
             gap: 0.75rem;
             width: 100%;
             padding: 0.75rem 1rem;
-            background: rgba(66, 133, 244, 0.1);
-            border: 1px solid rgba(66, 133, 244, 0.3);
-            color: white;
-            border-radius: 0.75rem;
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
             transition: all 0.2s;
         }
 
         .new-chat-btn:hover {
-            background: rgba(66, 133, 244, 0.2);
+            background: rgba(59, 130, 246, 0.15);
         }
 
         .new-chat-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: #4285f4;
+            fill: var(--accent-blue);
         }
 
         .chat-history-title {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
             padding: 0 0.5rem;
         }
 
         .chat-history-list {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
 
         .chat-history-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 0.75rem;
+            padding: 0.75rem 0.875rem;
+            background: transparent;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
+            border: 1px solid transparent;
         }
 
         .chat-history-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--bg-card);
         }
 
         .chat-history-item.active {
-            background: rgba(66, 133, 244, 0.15);
-            border-left: 3px solid #4285f4;
+            background: var(--bg-card);
+            border-color: var(--border-color);
         }
 
         .chat-preview {
             flex: 1;
             overflow: hidden;
+            margin-right: 0.5rem;
         }
 
         .chat-preview-title {
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 0.125rem;
         }
 
         .chat-preview-date {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.725rem;
+            color: var(--text-muted);
         }
 
         .delete-chat-btn {
             background: none;
             border: none;
             cursor: pointer;
-            padding: 0.5rem;
-            opacity: 0.5;
-            transition: opacity 0.2s, transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 0.25rem;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            color: var(--text-secondary);
         }
 
         .delete-chat-btn:hover {
             opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .delete-chat-btn svg {
-            width: 18px;
-            height: 18px;
+            color: #ef4444;
         }
 
         .no-chats-message {
             text-align: center;
             padding: 2rem 1rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.9rem;
-        }
-        
-        .quran-arabic {
-            font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
-            font-size: 1.5rem;
-            text-align: right;
-            direction: rtl;
-            line-height: 1.8;
-            margin: 1rem 0;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 0.75rem;
-            border-right: 3px solid #4285f4;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
 
-        .quran-translation {
-            font-size: 1rem;
-            line-height: 1.6;
-            margin: 0.5rem 0;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 0.5rem;
-            border-left: 2px solid #34a853;
-        }
-        
-        .verse-header {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.5rem;
-        }
-        .surah-title {
-            color: #4285f4;
-            font-weight: 500;
-        }
+        /* Quranic Text Styling */
         .arabic-text {
-            font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
-            font-size: 1.5rem;
-            line-height: 1.8;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 0.75rem;
-            border-right: 3px solid #4285f4;
-            margin-bottom: 0.75rem;
+            font-family: 'Amiri', 'Scheherazade New', serif;
+            font-size: 1.6rem;
+            line-height: 2.2;
+            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--radius-md);
+            border-right: 3px solid var(--accent-blue);
+            margin-bottom: 0.875rem;
+            color: #ffffff;
+            text-align: right;
+            direction: rtl;
         }
+
         .translation-text {
-            font-size: 1rem;
+            font-size: 0.925rem;
             line-height: 1.6;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 0.5rem;
-            border-left: 2px solid #34a853;
+            padding: 0.875rem 1rem;
+            background: rgba(16, 185, 129, 0.04);
+            border-radius: var(--radius-sm);
+            border-left: 2px solid var(--accent-green);
+            color: var(--text-secondary);
+        }
+
+        .verse-header {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .surah-title {
+            color: var(--accent-blue);
+            font-weight: 600;
         }
 
         .verse-container {
-            margin: 1rem 0;
+            margin: 0.875rem 0;
             padding: 1rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
         }
 
         .verse-reference {
-            font-size: 0.85rem;
-            color: #4285f4;
+            font-size: 0.825rem;
+            color: var(--accent-blue);
             margin-bottom: 0.5rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        .copy-btn {
-            background: rgba(66, 133, 244, 0.1);
-            border: 1px solid rgba(66, 133, 244, 0.3);
-            color: #4285f4;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .copy-btn:hover {
-            background: rgba(66, 133, 244, 0.2);
-        }
-
-        .copy-btn.copied {
-            background: rgba(52, 168, 83, 0.2);
-            border-color: rgba(52, 168, 83, 0.3);
-            color: #34a853;
-        }
-
-        .source-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
+        .disclaimer {
             font-size: 0.75rem;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            margin-top: 0.875rem;
+            text-align: center;
         }
 
-        .language-selector {
-            display: flex;
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-        
-        .language-toggle-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 50px;
-          height: 28px;
-        }
-
-        .switch input { 
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: #ccc;
-          transition: .4s;
-          border-radius: 28px;
-        }
-
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 20px;
-          width: 20px;
-          left: 4px;
-          bottom: 4px;
-          background-color: white;
-          transition: .4s;
-          border-radius: 50%;
-        }
-
-        input:checked + .slider {
-          background-color: #4285f4;
-        }
-
-        input:focus + .slider {
-          box-shadow: 0 0 1px #4285f4;
-        }
-
-        input:checked + .slider:before {
-          transform: translateX(22px);
-        }
-        
-        .lang-label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: 3px solid #4285f4;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
         .error-message {
-            background: rgba(234, 67, 53, 0.1);
-            border: 1px solid rgba(234, 67, 53, 0.3);
-            color: #ea4335;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin: 1rem 0;
-        }
-        
-        .usage-info {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            padding: 0.875rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
         }
 
-        .usage-section {
-            margin-bottom: 0.75rem;
+        /* Voice Panel Offcanvas */
+        .offcanvas-voice {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            z-index: 300;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border-top-left-radius: var(--radius-lg);
+            border-top-right-radius: var(--radius-lg);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            height: 320px;
         }
 
-        .usage-title {
-            color: #4285f4;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
+        .offcanvas-voice.active {
+            transform: translateY(0);
         }
 
-        .usage-detail {
+        .offcanvas-voice-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.25rem;
-            color: rgba(255, 255, 255, 0.7);
+            align-items: center;
         }
 
-        .usage-label {
-            font-weight: 500;
+        .offcanvas-voice-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .usage-value {
-            color: #34a853;
+        .offcanvas-voice-body {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
         }
-        
-/* Tambahkan CSS ini di style section */
-.offcanvas-voice {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-width: 500px;
-    margin: 0 auto;
-    background: #131314;
-    z-index: 300;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-top-left-radius: 1.5rem;
-    border-top-right-radius: 1.5rem;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: 100vh;
-}
 
-.offcanvas-voice.active {
-    transform: translateY(0);
-}
+        .wave-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            margin-bottom: 2rem;
+        }
 
-.offcanvas-voice-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
+        .wave-bars {
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            height: 60px;
+        }
 
-.offcanvas-voice-title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #4285f4;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .wave-bars.active {
+            display: flex;
+        }
 
-.offcanvas-voice-body {
-    position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-}
+        .wave-bar {
+            width: 4px;
+            height: 32px;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            opacity: 0.7;
+            animation: wave 1.2s infinite ease-in-out;
+        }
 
-/* Wave Container - Full screen style */
-.wave-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        .wave-bar:nth-child(1) { animation-delay: -0.6s; }
+        .wave-bar:nth-child(2) { animation-delay: -0.5s; }
+        .wave-bar:nth-child(3) { animation-delay: -0.4s; }
+        .wave-bar:nth-child(4) { animation-delay: -0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: -0.2s; }
+        .wave-bar:nth-child(6) { animation-delay: -0.1s; }
+        .wave-bar:nth-child(7) { animation-delay: 0s; }
 
-.wave-bars {
-    display: none; 
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    height: 100px;
-}
+        @keyframes wave {
+            0%, 60%, 100% { transform: scaleY(0.3); opacity: 0.3; }
+            30% { transform: scaleY(1); opacity: 1; }
+        }
 
-.wave-bars.active {
-    display: flex;
-}
+        .mic-button-container {
+            display: flex;
+            justify-content: center;
+        }
 
-.wave-bar {
-    width: 6px;
-    height: 40px;
-    background: linear-gradient(to top, #4285f4, #34a853);
-    border-radius: 3px;
-    opacity: 0.6;
-    animation: wave 1.2s infinite ease-in-out;
-}
+        .mic-button {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+            color: #ffffff;
+        }
 
-.wave-bar:nth-child(1) { animation-delay: -0.6s; }
-.wave-bar:nth-child(2) { animation-delay: -0.5s; }
-.wave-bar:nth-child(3) { animation-delay: -0.4s; }
-.wave-bar:nth-child(4) { animation-delay: -0.3s; }
-.wave-bar:nth-child(5) { animation-delay: -0.2s; }
-.wave-bar:nth-child(6) { animation-delay: -0.1s; }
-.wave-bar:nth-child(7) { animation-delay: 0s; }
+        .mic-button:hover {
+            transform: scale(1.05);
+            background: var(--accent-blue-hover);
+        }
 
-/* Tombol Mic - Floating di tengah bawah */
-.mic-button-container {
-    position: absolute;
-    bottom: 2rem;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    z-index: 10;
-}
+        .mic-button.listening {
+            background: #ef4444;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+            animation: pulseMic 1.5s infinite;
+        }
 
-.mic-button {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #4285f4;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 25px rgba(66, 133, 244, 0.4);
-}
+        @keyframes pulseMic {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
 
-.mic-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 30px rgba(66, 133, 244, 0.5);
-}
+        .elevenlabs-agent-widget {
+            position: fixed !important;
+            bottom: 100px !important;
+            right: 20px !important;
+            z-index: 1000 !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+        }
 
-.mic-button:active {
-    transform: scale(0.98);
-}
+        .elevenlabs-agent-launcher {
+            display: none !important;
+        }
 
-.mic-button.listening {
-    background: #ea4335;
-    box-shadow: 0 8px 25px rgba(234, 67, 53, 0.4);
-    animation: pulse 1.5s infinite;
-}
-
-.mic-button.listening:hover {
-    box-shadow: 0 12px 30px rgba(234, 67, 53, 0.5);
-}
-
-.mic-icon {
-    width: 32px;
-    height: 32px;
-    color: white;
-}
-
-.mic-button.listening .mic-icon {
-    animation: mic-pulse 1s infinite;
-}
-
-/* Animations */
-@keyframes wave {
-    0%, 60%, 100% { 
-        transform: scaleY(0.3);
-        opacity: 0.4;
-    }
-    30% { 
-        transform: scaleY(1);
-        opacity: 1;
-    }
-}
-
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 8px 25px rgba(234, 67, 53, 0.4);
-    }
-    50% {
-        transform: scale(1.05);
-        box-shadow: 0 12px 30px rgba(234, 67, 53, 0.6);
-    }
-}
-
-@keyframes mic-pulse {
-    0%, 100% { 
-        opacity: 1;
-    }
-    50% { 
-        opacity: 0.7;
-    }
-}
-
-/* Status minimal (opsional) */
-.voice-status {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.6);
-    transform: translateY(-50px);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.voice-status.show {
-    opacity: 1;
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-    .mic-button {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .mic-icon {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .wave-bars {
-        height: 80px;
-    }
-    
-    .wave-bar {
-        width: 5px;
-        height: 35px;
-    }
-}
-#voiceOffcanvasOverlay {
-    z-index: 250; /* Lebih rendah dari offcanvas-voice tapi lebih tinggi dari konten lain */
-    background: rgba(0, 0, 0, 0.7); /* Lebih gelap */
-}
-
-@keyframes slideUpFade {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.offcanvas-voice.active .voice-controls {
-    animation: slideUpFade 0.3s ease 0.1s both;
-}
-        /* Responsif untuk mobile */
-        @media (max-width: 768px) {
-            .offcanvas-sidebar, .offcanvas-voice {
-                width: 280px;
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .input-area {
+                width: calc(100% - 1.5rem);
+                bottom: 0.875rem;
+                padding: 0.625rem 0.875rem;
             }
-            
-            .quran-arabic {
-                font-size: 1.3rem;
+            .welcome-text {
+                font-size: 1.25rem;
             }
-        }
-
-        @media (max-width: 480px) {
-            .offcanvas-sidebar, .offcanvas-voice {
+            .offcanvas-sidebar {
                 width: 100%;
             }
-            
-            .quran-arabic {
-                font-size: 1.2rem;
-            }
-            
-            .input-area {
-                padding: 0.75rem;
-            }
         }
-
-.elevenlabs-agent-widget {
-    position: fixed !important;
-    bottom: 100px !important;
-    right: 20px !important;
-    z-index: 1000 !important;
-    border-radius: 20px !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
-}
-
-.elevenlabs-agent-widget iframe {
-    border-radius: 20px !important;
-}
-
-/* Hide default launcher since we use our own button */
-.elevenlabs-agent-launcher {
-    display: none !important;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .elevenlabs-agent-widget {
-        bottom: 80px !important;
-        right: 10px !important;
-        width: calc(100vw - 20px) !important;
-        max-width: 400px !important;
-    }
-}
-
-.voice-header-main {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex: 1;
-}
-
-.voice-icon-wrapper {
-    position: relative;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.1), rgba(52, 168, 83, 0.1));
-    border-radius: 12px;
-    padding: 10px;
-}
-
-.voice-main-icon {
-    width: 24px;
-    height: 24px;
-    color: #4285f4;
-    animation: gentle-bounce 2s ease-in-out infinite;
-}
-
-.voice-status-indicator {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 16px;
-    height: 16px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    color: #34a853;
-    animation: pulse 2s infinite;
-}
-
-.voice-header-text {
-    flex: 1;
-}
-
-.voice-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: white;
-}
-
-.title-icon {
-    width: 20px;
-    height: 20px;
-    color: #4285f4;
-}
-
-.voice-subtitle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.subtitle-icon {
-    width: 14px;
-    height: 14px;
-    color: #fbbc04;
-}
-
-/* Status Display */
-.voice-status-display {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    margin: 24px 0;
-    transition: all 0.3s ease;
-}
-
-.status-icon-wrapper {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(66, 133, 244, 0.1);
-    border-radius: 50%;
-}
-
-.status-icon {
-    width: 24px;
-    height: 24px;
-    color: #4285f4;
-    transition: all 0.3s ease;
-}
-
-.status-text-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.status-message {
-    font-size: 1rem;
-    font-weight: 500;
-    color: white;
-}
-
-.status-details {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.info-icon {
-    width: 14px;
-    height: 14px;
-    color: #fbbc04;
-}
-
-/* States */
-.voice-status-display.listening {
-    background: rgba(52, 168, 83, 0.1);
-    border: 1px solid rgba(52, 168, 83, 0.2);
-}
-
-.voice-status-display.listening .status-icon {
-    color: #34a853;
-    animation: mic-pulse 1s infinite;
-}
-
-.voice-status-display.speaking {
-    background: rgba(251, 188, 4, 0.1);
-    border: 1px solid rgba(251, 188, 4, 0.2);
-}
-
-.voice-status-display.speaking .status-icon {
-    color: #fbbc04;
-    animation: speak-pulse 1s infinite;
-}
-
-.voice-status-display.error {
-    background: rgba(234, 67, 53, 0.1);
-    border: 1px solid rgba(234, 67, 53, 0.2);
-}
-
-.voice-status-display.error .status-icon {
-    color: #ea4335;
-}
-
-/* Conversation Log */
-.voice-conversation-log {
-    max-height: 300px;
-    overflow-y: auto;
-    margin: 20px 0;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.conversation-message {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px;
-    border-radius: 12px;
-    animation: fadeIn 0.3s ease;
-}
-
-.message-user {
-    background: rgba(66, 133, 244, 0.1);
-    border-left: 3px solid #4285f4;
-}
-
-.message-ai {
-    background: rgba(52, 168, 83, 0.1);
-    border-left: 3px solid #34a853;
-}
-
-.message-icon {
-    width: 20px;
-    height: 20px;
-    margin-top: 2px;
-    flex-shrink: 0;
-}
-
-.message-user .message-icon {
-    color: #4285f4;
-}
-
-.message-ai .message-icon {
-    color: #34a853;
-}
-
-.message-content {
-    flex: 1;
-}
-
-.message-text {
-    font-size: 0.95rem;
-    line-height: 1.5;
-    color: white;
-    word-wrap: break-word;
-}
-
-.message-time {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.message-time i {
-    width: 12px;
-    height: 12px;
-}
-
-/* Tips Section */
-.voice-tips {
-    margin-top: 24px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tip-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding: 8px;
-    border-radius: 8px;
-    transition: background 0.2s;
-}
-
-.tip-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.tip-item:last-child {
-    margin-bottom: 0;
-}
-
-.tip-item i {
-    width: 18px;
-    height: 18px;
-    color: #fbbc04;
-    flex-shrink: 0;
-}
-
-.tip-item span {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-}
-
-/* Wave Animation */
-.wave-animation-container {
-    position: relative;
-    padding: 24px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.05), rgba(52, 168, 83, 0.05));
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
-}
-
-.wave-bars {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80px;
-    gap: 6px;
-}
-
-.wave-bar {
-    width: 6px;
-    height: 40px;
-    background: linear-gradient(to top, #4285f4, #34a853);
-    border-radius: 3px;
-    opacity: 0.6;
-}
-
-.wave-bar:nth-child(1) { animation: wave 1.2s infinite ease-in-out -0.4s; }
-.wave-bar:nth-child(2) { animation: wave 1.2s infinite ease-in-out -0.3s; }
-.wave-bar:nth-child(3) { animation: wave 1.2s infinite ease-in-out -0.2s; }
-.wave-bar:nth-child(4) { animation: wave 1.2s infinite ease-in-out -0.1s; }
-.wave-bar:nth-child(5) { animation: wave 1.2s infinite ease-in-out 0s; }
-
-/* Animations */
-@keyframes gentle-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-@keyframes wave {
-    0%, 60%, 100% { 
-        transform: scaleY(0.3);
-        opacity: 0.4;
-    }
-    30% { 
-        transform: scaleY(1);
-        opacity: 1;
-    }
-}
-
-@keyframes mic-pulse {
-    0%, 100% { 
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% { 
-        transform: scale(1.1);
-        opacity: 0.8;
-    }
-}
-
-@keyframes speak-pulse {
-    0%, 100% { 
-        transform: scale(1);
-        color: #fbbc04;
-    }
-    50% { 
-        transform: scale(1.15);
-        color: #ffd633;
-    }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-    .voice-header-main {
-        gap: 12px;
-    }
-    
-    .voice-icon-wrapper {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .voice-main-icon {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .voice-status-display {
-        flex-direction: column;
-        text-align: center;
-        gap: 12px;
-    }
-}
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.css">
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -1683,16 +973,15 @@
             <span></span>
         </div>
         <div class="logo" id="chatTitle">
-            <span class="logo-icon">Ustad</span>
-             AI
+            <span class="logo-icon">Ustad</span> AI
         </div>
-            <div class="language-toggle-wrapper">
-                <label class="lang-label" id="langLabel">ID</label>
-                <label class="switch">
-                  <input type="checkbox" id="languageToggle">
-                  <span class="slider"></span>
-                </label>
-            </div>
+        <div class="language-toggle-wrapper">
+            <label class="lang-label" id="langLabel">ID</label>
+            <label class="switch">
+                <input type="checkbox" id="languageToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
     </header>
 
     <div class="offcanvas-overlay" id="offcanvasOverlay"></div>
@@ -1704,72 +993,68 @@
         </div>
         <div class="offcanvas-body">
             <button class="new-chat-btn" id="newChatBtn">
-                <svg viewBox="0 0 24 24">
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
                 <span>Obrolan Baru</span>
             </button>
-            
+
             <div class="chat-history-title">Obrolan Terbaru</div>
             <div class="chat-history-list" id="chatHistoryList">
                 <div class="no-chats-message">Belum ada riwayat percakapan</div>
             </div>
-            
         </div>
     </div>
-    
-<div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
 
-<div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
-<div class="offcanvas-voice" id="offcanvasVoice">
-  <!-- Header minimal -->
-  <div class="offcanvas-voice-header">
-      <h3 class="offcanvas-voice-title">
-          <i data-lucide="mic"></i>
-          Ustad Voice
-      </h3>
-      <button class="close-offcanvas" id="closeOffcanvasVoice">
-          <i data-lucide="x"></i>
-      </button>
-  </div>
-  
-  <div class="offcanvas-voice-body">
-      <div class="wave-container" id="waveContainer">
-          <div class="wave-bars">
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-              <div class="wave-bar"></div>
-          </div>
-      </div>
-      
-      <div class="mic-button-container">
-          <button class="mic-button" id="micButton">
-              <i data-lucide="mic" class="mic-icon"></i>
-          </button>
-      </div>
-  </div>
-</div>
+    <div class="offcanvas-overlay" id="voiceOffcanvasOverlay"></div>
+    <div class="offcanvas-voice" id="offcanvasVoice">
+        <div class="offcanvas-voice-header">
+            <h3 class="offcanvas-voice-title">
+                <i data-lucide="mic"></i>
+                Ustad Voice
+            </h3>
+            <button class="close-offcanvas" id="closeOffcanvasVoice">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="offcanvas-voice-body">
+            <div class="wave-container" id="waveContainer">
+                <div class="wave-bars">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+            </div>
+
+            <div class="mic-button-container">
+                <button class="mic-button" id="micButton">
+                    <i data-lucide="mic" class="mic-icon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <main class="main-content">
         <div class="welcome-state" id="welcomeState">
-            <svg class="stad-sparkle" viewBox="0 0 24 24" width="60" height="60">
+            <svg class="stad-sparkle" viewBox="0 0 24 24">
                 <defs>
                     <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#4285f4"/>
-                        <stop offset="100%" style="stop-color:#34a853"/>
+                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                        <stop offset="100%" style="stop-color:#10b981"/>
                     </linearGradient>
                 </defs>
                 <path fill="url(#sparkleGradient)" d="M12 0L13.5 8.5L22 10L13.5 11.5L12 20L10.5 11.5L2 10L10.5 8.5L12 0Z"/>
                 <path fill="url(#sparkleGradient)" d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z"/>
                 <path fill="url(#sparkleGradient)" d="M5 15L5.5 17L7 17.5L5.5 18L5 20L4.5 18L3 17.5L4.5 17L5 15Z"/>
             </svg>
-            <small>Assalamualaikum,</small>
+            <div class="welcome-salutation">Assalamualaikum</div>
             <p class="welcome-text">Ada yang bisa saya bantu tentang Al-Quran?</p>
-            </div>
+        </div>
 
         <div class="chat-container" id="chatContainer"></div>
     </main>
@@ -1781,55 +1066,60 @@
             </div>
             <div class="input-actions">
                 <div class="left-actions">
-    <button class="verse-btn" id="selectVerseBtn" title="Pilih Ayat">
-        <svg width="20" height="20" viewBox="0 0 24 24">
-            <path d="M19 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h13v16H6V4zm2 10h9v2H8v-2zm0-3h9v2H8v-2zm0-3h9v2H8V8z"/>
-        </svg>
-    </button>
-    
-    <button class="pry-btn hidden" id="prayerBtn" title="Bacaan Sholat">
-        <svg width="20" height="20" viewBox="0 0 24 24">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-        </svg>
-    </button>
-</div>
+                    <button class="verse-btn" id="selectVerseBtn" title="Pilih Ayat">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </button>
 
-<div class="action-sheet-overlay" id="actionSheetOverlay"></div>
-<div class="action-sheet" id="actionSheet">
-    <div class="action-sheet-header">
-        <div class="action-sheet-title">Pilih Ayat Al-Quran</div>
-        <button class="close-action-sheet" id="closeActionSheet">&times;</button>
-    </div>
-    <div class="action-sheet-body">
-        <div class="verse-selection-controls">
-            <label for="surahSelect">Surah:</label>
-            <select id="surahSelect" class="styled-select"></select>
-            <label for="verseSelect">Ayat:</label>
-            <select id="verseSelect" class="styled-select"></select>
-        </div>
-        <button class="select-verse-btn" id="goVerseBtn">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            Tampilkan Ayat
-        </button>
-    </div>
-</div>
+                    <button class="pry-btn hidden" id="prayerBtn" title="Bacaan Sholat">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                    </button>
+                </div>
 
                 <div class="right-actions">
-                <button class="wave-btn" id="waveBtn" title="Voice Assistant">
-                    <svg width="20" height="20" viewBox="0 0 24 24">
-                        <path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/>
-                    </svg>
-                </button>
-                    
+                    <button class="wave-btn" id="waveBtn" title="Voice Assistant">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </button>
+
                     <button class="send-btn" id="sendBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                         </svg>
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="action-sheet-overlay" id="actionSheetOverlay"></div>
+    <div class="action-sheet" id="actionSheet">
+        <div class="action-sheet-header">
+            <div class="action-sheet-title">Pilih Ayat Al-Quran</div>
+            <button class="close-action-sheet" id="closeActionSheet">&times;</button>
+        </div>
+        <div class="action-sheet-body">
+            <div class="verse-selection-controls">
+                <label for="surahSelect">Surah:</label>
+                <select id="surahSelect" class="styled-select"></select>
+                <label for="verseSelect">Ayat:</label>
+                <select id="verseSelect" class="styled-select"></select>
+            </div>
+            <button class="select-verse-btn" id="goVerseBtn">
+                Tampilkan Ayat
+            </button>
+        </div>
+    </div>
+
 <script>
 // Quran AI Chat Application - D1 VERSION
 // ===============================================
@@ -1891,48 +1181,37 @@ class AppState {
 class MarkdownParser {
     static parse(text) {
         if (!text) return '';
-        
+
         let html = text;
-        
-        // 1. Bold (**text** or __text__)
+
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-        
-        // 2. Italic (*text* or _text_)
         html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
         html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-        
-        // 3. Numbered lists (1. 2. etc) - Handle properly
+
         html = this.formatNumberedLists(html);
-        
-        // 4. Unordered lists (- item or * item)
         html = this.formatUnorderedLists(html);
-        
-        // 5. Paragraphs and line breaks
+
         html = html.replace(/\n\n+/g, '</p><p>');
         html = html.replace(/\n/g, '<br>');
         html = `<p>${html}</p>`;
-        
-        // 6. Clean up empty paragraphs
+
         html = html.replace(/<p><\/p>/g, '');
         html = html.replace(/<p><br><\/p>/g, '');
-        
+
         return html;
     }
-    
+
     static formatNumberedLists(text) {
-        // Split by lines
         const lines = text.split('\n');
         let inList = false;
         let listHtml = '';
         let result = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
-            // Check if line starts with number pattern (1., 2., etc)
             const listMatch = line.match(/^(\d+)\.\s+(.*)/);
-            
+
             if (listMatch) {
                 if (!inList) {
                     inList = true;
@@ -1950,28 +1229,25 @@ class MarkdownParser {
                 result.push(line);
             }
         }
-        
-        // Close any open list
+
         if (inList) {
             listHtml += '</ol>';
             result.push(listHtml);
         }
-        
+
         return result.join('\n');
     }
-    
+
     static formatUnorderedLists(text) {
         const lines = text.split('\n');
         let inList = false;
         let listHtml = '';
         let result = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
-            // Check if line starts with - or * for unordered list
             const listMatch = line.match(/^[-*]\s+(.*)/);
-            
+
             if (listMatch) {
                 if (!inList) {
                     inList = true;
@@ -1989,204 +1265,52 @@ class MarkdownParser {
                 result.push(line);
             }
         }
-        
+
         if (inList) {
             listHtml += '</ul>';
             result.push(listHtml);
         }
-        
+
         return result.join('\n');
     }
-    
+
     static parseInlineMarkdown(text) {
         let html = text;
-        // Bold
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
-        // Italic
         html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
         html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-        // Arabic text (assuming rtl)
         html = html.replace(/"(.*?)"/g, '<span dir="rtl" class="arabic-inline">$1</span>');
         return html;
     }
 }
 
-// Add CSS for markdown formatting
-const markdownStyles = `
-<style>
-.ai-response .ai-text {
-    font-size: 1rem;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.ai-response .ai-text p {
-    margin-bottom: 1rem;
-    line-height: 1.6;
-}
-
-.ai-response .ai-text p:last-child {
-    margin-bottom: 0;
-}
-
-.ai-response .ai-text strong {
-    color: #fff;
-    font-weight: 600;
-}
-
-.ai-response .ai-text em {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.ai-response .ai-list {
-    margin: 0.75rem 0;
-    padding-left: 1.5rem;
-}
-
-.ai-response .ai-list.numbered {
-    list-style-type: decimal;
-}
-
-.ai-response .ai-list.bulleted {
-    list-style-type: disc;
-}
-
-.ai-response .ai-list li {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-}
-
-.ai-response .ai-list li:last-child {
-    margin-bottom: 0;
-}
-
-.ai-response .arabic-inline {
-    font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
-    font-size: 1.1em;
-    direction: rtl;
-    padding: 0 0.25rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.25rem;
-}
-
-.ai-response .verse-ref {
-    color: #4285f4;
-    font-weight: 500;
-    margin: 0 0.25rem;
-}
-
-.ai-response .ayah-number {
-    color: #34a853;
-    font-weight: 500;
-    margin: 0 0.125rem;
-}
-
-.ai-response .surah-name {
-    color: #4285f4;
-    font-weight: 500;
-}
-
-/* Headings in AI response */
-.ai-response h3, .ai-response h4, .ai-response h5 {
-    color: #4285f4;
-    margin: 1.25rem 0 0.75rem 0;
-    font-weight: 600;
-}
-
-.ai-response h3 {
-    font-size: 1.25rem;
-}
-
-.ai-response h4 {
-    font-size: 1.1rem;
-}
-
-.ai-response h5 {
-    font-size: 1rem;
-}
-
-/* Blockquote styling */
-.ai-response blockquote {
-    border-left: 3px solid #4285f4;
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    background: rgba(66, 133, 244, 0.05);
-    border-radius: 0 0.5rem 0.5rem 0;
-    font-style: italic;
-}
-
-/* Code/inline code */
-.ai-response code {
-    font-family: 'Courier New', monospace;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 0.9em;
-}
-
-/* Table styling */
-.ai-response table {
-    border-collapse: collapse;
-    margin: 1rem 0;
-    width: 100%;
-}
-
-.ai-response th, .ai-response td {
-    padding: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: left;
-}
-
-.ai-response th {
-    background: rgba(66, 133, 244, 0.1);
-    font-weight: 600;
-}
-
-/* Clean up */
-.ai-response br {
-    line-height: 1.6;
-}
-</style>
-`;
-
-// Inject styles
-document.head.insertAdjacentHTML('beforeend', markdownStyles);
-
 // DOM Elements Cache
 class DomElements {
     constructor() {
-        // Chat Elements
         this.chatContainer = document.getElementById('chatContainer');
         this.inputArea = document.getElementById('inputArea');
         this.messageInput = document.getElementById('messageInput');
         this.sendBtn = document.getElementById('sendBtn');
         this.waveBtn = document.getElementById('waveBtn');
         this.welcomeState = document.getElementById('welcomeState');
-        
-        // Offcanvas Elements
+
         this.menuIcon = document.getElementById('menuIcon');
         this.offcanvasOverlay = document.getElementById('offcanvasOverlay');
         this.offcanvasSidebar = document.getElementById('offcanvasSidebar');
         this.closeOffcanvas = document.getElementById('closeOffcanvas');
-        
-        // Voice Elements
+
         this.voiceOffcanvasOverlay = document.getElementById('voiceOffcanvasOverlay');
         this.offcanvasVoice = document.getElementById('offcanvasVoice');
         this.closeOffcanvasVoice = document.getElementById('closeOffcanvasVoice');
-        
-        // Chat History Elements
+
         this.chatHistoryList = document.getElementById('chatHistoryList');
         this.newChatBtn = document.getElementById('newChatBtn');
-        
-        // Language Elements
+
         this.languageToggle = document.getElementById('languageToggle');
         this.langLabel = document.getElementById('langLabel');
         this.chatTitle = document.getElementById('chatTitle');
-        
-        // Verse Selection Elements
+
         this.selectVerseBtn = document.getElementById('selectVerseBtn');
         this.actionSheetOverlay = document.getElementById('actionSheetOverlay');
         this.actionSheet = document.getElementById('actionSheet');
@@ -2201,12 +1325,11 @@ class DomElements {
             'chatContainer', 'messageInput', 'sendBtn', 'welcomeState',
             'menuIcon', 'waveBtn', 'languageToggle', 'langLabel'
         ];
-        
         return requiredElements.every(element => this[element] !== null);
     }
 }
 
-// Database Service for D1
+// Database Service
 class DatabaseService {
     static async saveChat(chatId, title, messages, language = 'id', userId) {
         try {
@@ -2223,7 +1346,7 @@ class DatabaseService {
                     language: language
                 })
             });
-            
+
             return await response.json();
         } catch (error) {
             console.error('Failed to save chat to database:', error);
@@ -2238,7 +1361,7 @@ class DatabaseService {
                     'X-User-ID': userId
                 }
             });
-            
+
             return await response.json();
         } catch (error) {
             console.error('Failed to load chats from database:', error);
@@ -2253,7 +1376,7 @@ class DatabaseService {
                     'X-User-ID': userId
                 }
             });
-            
+
             return await response.json();
         } catch (error) {
             console.error('Failed to load chat from database:', error);
@@ -2269,7 +1392,7 @@ class DatabaseService {
                     'X-User-ID': userId
                 }
             });
-            
+
             return await response.json();
         } catch (error) {
             console.error('Failed to delete chat from database:', error);
@@ -2277,14 +1400,13 @@ class DatabaseService {
         }
     }
 
-    // Backup to localStorage if database fails
     static saveToLocalStorageBackup(chatId, chatData) {
         try {
             const backupKey = `chat_backup_${chatId}`;
             const backupList = JSON.parse(localStorage.getItem('chat_backup_list') || '[]');
-            
+
             localStorage.setItem(backupKey, JSON.stringify(chatData));
-            
+
             if (!backupList.includes(chatId)) {
                 backupList.push(chatId);
                 localStorage.setItem('chat_backup_list', JSON.stringify(backupList));
@@ -2298,14 +1420,14 @@ class DatabaseService {
         try {
             const backupList = JSON.parse(localStorage.getItem('chat_backup_list') || '[]');
             const chats = [];
-            
+
             backupList.forEach(chatId => {
                 const chatData = localStorage.getItem(`chat_backup_${chatId}`);
                 if (chatData) {
                     chats.push(JSON.parse(chatData));
                 }
             });
-            
+
             return chats.sort((a, b) => 
                 new Date(b.updatedAt || b.createdAt).getTime() - 
                 new Date(a.updatedAt || a.createdAt).getTime()
@@ -2336,7 +1458,6 @@ class ApiService {
             if (!response.ok) throw new Error('Failed to load surah list');
             return await response.json();
         } catch (error) {
-            console.error('Primary surah API failed, trying fallback:', error);
             return await ApiService.fetchSurahListFallback();
         }
     }
@@ -2347,46 +1468,7 @@ class ApiService {
             const data = await response.json();
             return data.data;
         } catch (error) {
-            console.error('Fallback surah API failed:', error);
             return [];
-        }
-    }
-
-    static async fetchSurahVerse(surahNumber, ayahNumber) {
-        try {
-            const [arabicResponse, translationResponse] = await Promise.all([
-                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${Constants.ARABIC_FONT}`),
-                fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${Constants.TRANSLATION_LANG}`)
-            ]);
-
-            if (!arabicResponse.ok || !translationResponse.ok) {
-                throw new Error('API request failed');
-            }
-
-            const [arabicData, translationData] = await Promise.all([
-                arabicResponse.json(),
-                translationResponse.json()
-            ]);
-
-            return {
-                arabicData,
-                translationData,
-                success: true
-            };
-        } catch (error) {
-            console.error('Surah verse API failed:', error);
-            return { success: false, error };
-        }
-    }
-
-    static async fetchSingleVerse(surahNumber, ayahNumber) {
-        try {
-            const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}`);
-            if (!response.ok) throw new Error('Single verse API failed');
-            return await response.json();
-        } catch (error) {
-            console.error('Single verse API failed:', error);
-            return null;
         }
     }
 
@@ -2409,29 +1491,7 @@ class ApiService {
             throw error;
         }
     }
-    
-    static async fetchPrayerReadings(search = '', category = '', limit = 20) {
-        try {
-            let url = `${Constants.WORKER_URL}/api/prayer-readings`;
-            const params = new URLSearchParams();
-            
-            if (search) params.append('search', search);
-            if (category) params.append('category', category);
-            if (limit) params.append('limit', limit);
-            
-            if (params.toString()) {
-                url += `?${params.toString()}`;
-            }
-            
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to load prayer readings');
-            return await response.json();
-        } catch (error) {
-            console.error('Prayer readings API failed:', error);
-            return { success: false, data: [] };
-        }
-    }
-    
+
     static async fetchPrayerSequence() {
         try {
             const response = await fetch(`${Constants.WORKER_URL}/api/prayer-sequence`);
@@ -2442,29 +1502,9 @@ class ApiService {
             return { success: false, data: [] };
         }
     }
-    
-    static async askPrayerQuestion(question, language) {
-        try {
-            const response = await fetch(`${Constants.WORKER_URL}/api/ask-prayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, language })
-            });
-    
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-    
-            return await response.json();
-        } catch (error) {
-            console.error('Prayer question API failed:', error);
-            throw error;
-        }
-    }
 }
 
-// Chat Manager with D1 Integration
+// Chat Manager
 class ChatManager {
     constructor(state, dom) {
         this.state = state;
@@ -2482,7 +1522,6 @@ class ChatManager {
             language: this.state.currentLanguage
         };
 
-        // Save to D1 database
         const dbResult = await DatabaseService.saveChat(
             chatId,
             newChat.title,
@@ -2492,14 +1531,9 @@ class ChatManager {
         );
 
         if (dbResult.success) {
-            // Add to local state
             this.state.chatHistory.unshift(newChat);
-            
-            // Backup to localStorage
             DatabaseService.saveToLocalStorageBackup(chatId, newChat);
         } else {
-            console.error('Failed to save chat to database:', dbResult.error);
-            // Still add to local state and backup
             this.state.chatHistory.unshift(newChat);
             DatabaseService.saveToLocalStorageBackup(chatId, newChat);
         }
@@ -2514,13 +1548,11 @@ class ChatManager {
 
     async loadChat(chatId) {
         try {
-            // Try to load from local state first
             let chat = this.state.chatHistory.find(c => c.id === chatId);
-            
-            // If not found in local state, try to load from database
+
             if (!chat) {
                 const dbResult = await DatabaseService.loadChat(chatId, this.state.userId);
-                
+
                 if (dbResult.success && dbResult.data) {
                     chat = {
                         id: dbResult.data.chat_id,
@@ -2530,22 +1562,15 @@ class ChatManager {
                         updatedAt: dbResult.data.updated_at,
                         language: dbResult.data.language || 'id'
                     };
-                    
-                    // Add to local state
                     this.state.chatHistory.push(chat);
                 } else {
-                    // Try localStorage backup
                     const backupChats = DatabaseService.loadFromLocalStorageBackup();
                     chat = backupChats.find(c => c.id === chatId);
-                    
-                    if (chat) {
-                        this.state.chatHistory.push(chat);
-                    }
+                    if (chat) this.state.chatHistory.push(chat);
                 }
             }
 
             if (!chat) {
-                console.error('Chat not found:', chatId);
                 this.showError('Percakapan tidak ditemukan');
                 return;
             }
@@ -2605,7 +1630,7 @@ class ChatManager {
     displayVerseResponse(verseData) {
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
-        
+
         const html = `
             <div class="verse-header">
                 <span class="surah-title">${verseData.surahNameArabic || verseData.surahName} (${verseData.surahNumber}:${verseData.ayahNumber})</span>
@@ -2617,7 +1642,7 @@ class ChatManager {
                 ${this.getLocalizedText('Translation:', 'Terjemahan:')} ${verseData.translationText}
             </div>
         `;
-        
+
         responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
         this.scrollToBottom();
@@ -2663,13 +1688,11 @@ class ChatManager {
     showWelcomeState() {
         this.dom.welcomeState.classList.remove('hidden');
         this.dom.chatContainer.classList.remove('active');
-        this.dom.inputArea.classList.remove('chat-mode');
     }
 
     hideWelcomeState() {
         this.dom.welcomeState.classList.add('hidden');
         this.dom.chatContainer.classList.add('active');
-        this.dom.inputArea.classList.add('chat-mode');
     }
 
     clearChatContainer() {
@@ -2677,9 +1700,9 @@ class ChatManager {
     }
 
     updateChatTitle(title) {
-        this.dom.chatTitle.textContent = title || this.getLocalizedText('New Chat', 'Obrolan Baru');
+        this.dom.chatTitle.innerHTML = `<span class="logo-icon">${title || this.getLocalizedText('Ustad', 'Ustad')}</span> AI`;
     }
-    
+
     scrollToBottom() {
         setTimeout(() => {
             if (this.dom.chatContainer) {
@@ -2691,9 +1714,8 @@ class ChatManager {
     async loadFromDatabase() {
         try {
             const result = await DatabaseService.loadChats(this.state.userId, 50, 0);
-            
+
             if (result.success && result.data) {
-                // Transform database data to local format
                 this.state.chatHistory = result.data.map(dbChat => ({
                     id: dbChat.chat_id,
                     title: dbChat.title,
@@ -2704,16 +1726,12 @@ class ChatManager {
                 })).sort((a, b) => 
                     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
                 );
-                
                 return true;
             } else {
-                // Fallback to localStorage backup
                 this.state.chatHistory = DatabaseService.loadFromLocalStorageBackup();
                 return false;
             }
         } catch (error) {
-            console.error('Failed to load chats from database:', error);
-            // Fallback to localStorage backup
             this.state.chatHistory = DatabaseService.loadFromLocalStorageBackup();
             return false;
         }
@@ -2722,7 +1740,6 @@ class ChatManager {
     async renderChatHistory() {
         if (!this.dom.chatHistoryList) return;
 
-        // If no data, load from database
         if (this.state.chatHistory.length === 0) {
             await this.loadFromDatabase();
         }
@@ -2749,14 +1766,15 @@ class ChatManager {
                     <div class="chat-preview-date">${this.formatDate(chat.updatedAt || chat.createdAt)}</div>
                 </div>
                 <button class="delete-chat-btn" data-chat-id="${chat.id}" title="${this.getLocalizedText('Delete', 'Hapus')}">
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.12-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                     </svg>
                 </button>
             `;
 
             item.addEventListener('click', () => this.loadChat(chat.id));
-            
+
             const deleteBtn = item.querySelector('.delete-chat-btn');
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -2776,14 +1794,10 @@ class ChatManager {
         if (!confirm(message)) return;
 
         const wasActiveChat = this.state.currentChatId === chatId;
-        
-        // Delete from database
+
         await DatabaseService.deleteChat(chatId, this.state.userId);
-        
-        // Delete from localStorage backup
         DatabaseService.deleteFromLocalStorageBackup(chatId);
-        
-        // Remove from local state
+
         this.state.chatHistory = this.state.chatHistory.filter(chat => chat.id !== chatId);
 
         if (wasActiveChat) {
@@ -2794,7 +1808,7 @@ class ChatManager {
                 this.showWelcomeState();
             }
         }
-        
+
         await this.renderChatHistory();
     }
 
@@ -2807,7 +1821,7 @@ class ChatManager {
         }
 
         if (currentChat.messages.length === 0) {
-            const title = userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '');
+            const title = userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : '');
             currentChat.title = title;
             this.updateChatTitle(title);
         }
@@ -2822,8 +1836,7 @@ class ChatManager {
         currentChat.updatedAt = new Date().toISOString();
         currentChat.language = this.state.currentLanguage;
 
-        // Save to database
-        const dbResult = await DatabaseService.saveChat(
+        await DatabaseService.saveChat(
             currentChat.id,
             currentChat.title,
             currentChat.messages,
@@ -2831,14 +1844,8 @@ class ChatManager {
             this.state.userId
         );
 
-        if (!dbResult.success) {
-            console.error('Failed to save message to database:', dbResult.error);
-        }
-
-        // Backup to localStorage
         DatabaseService.saveToLocalStorageBackup(currentChat.id, currentChat);
 
-        // Update local state
         this.state.chatHistory = this.state.chatHistory.filter(c => c.id !== currentChat.id);
         this.state.chatHistory.unshift(currentChat);
 
@@ -2855,8 +1862,6 @@ class ChatManager {
             return this.getLocalizedText('Today', 'Hari ini');
         } else if (diffDays === 1) {
             return this.getLocalizedText('Yesterday', 'Kemarin');
-        } else if (diffDays < 7) {
-            return this.getLocalizedText(`${diffDays} days ago`, `${diffDays} hari lalu`);
         } else {
             return date.toLocaleDateString(this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US', {
                 day: 'numeric',
@@ -2867,67 +1872,6 @@ class ChatManager {
 
     getLocalizedText(english, indonesian) {
         return this.state.currentLanguage === 'id' ? indonesian : english;
-    }
-
-    displayPrayerReading(prayerData) {
-        const responseEl = document.createElement('div');
-        responseEl.className = 'ai-response prayer-reading';
-        
-        const html = `
-            <div class="verse-header">
-                <span class="surah-title">${prayerData.name}</span>
-                <small>${prayerData.category}</small>
-            </div>
-            <div class="arabic-text" dir="rtl">
-                ${prayerData.arabic}
-            </div>
-            <div class="prayer-latin" style="margin: 0.5rem 0; font-style: italic; color: rgba(255,255,255,0.8);">
-                ${prayerData.latin}
-            </div>
-            <div class="translation-text">
-                <strong>Terjemahan:</strong> ${prayerData.translation}
-            </div>
-            <div class="prayer-description" style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; font-size: 0.9rem;">
-                <strong>Keterangan:</strong> ${prayerData.description}
-            </div>
-        `;
-        
-        responseEl.innerHTML = html;
-        this.dom.chatContainer.appendChild(responseEl);
-        this.scrollToBottom();
-    }
-    
-    displayPrayerAIResponse(prayerResponse) {
-        const responseEl = document.createElement('div');
-        responseEl.className = 'ai-response';
-        
-        let html = `<div class="ai-text">${prayerResponse.answer}</div>`;
-        
-        if (prayerResponse.relevant_prayers && prayerResponse.relevant_prayers.length > 0) {
-            html += `<div class="prayers-section" style="margin-top: 1.5rem;">`;
-            html += `<h4 style="margin-bottom: 1rem; color: #4285f4;">Bacaan Sholat Terkait:</h4>`;
-            
-            prayerResponse.relevant_prayers.forEach(prayer => {
-                html += `
-                    <div class="prayer-card" style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.75rem; border-left: 3px solid #4285f4;">
-                        <div style="font-weight: 500; margin-bottom: 0.5rem;">${prayer.name}</div>
-                        <div dir="rtl" style="font-size: 1.2rem; margin-bottom: 0.5rem;">${prayer.arabic}</div>
-                        <div style="font-style: italic; margin-bottom: 0.5rem;">${prayer.latin}</div>
-                        <div style="color: rgba(255,255,255,0.8);">${prayer.translation}</div>
-                    </div>
-                `;
-            });
-            
-            html += `</div>`;
-        }
-        
-        if (prayerResponse.disclaimer) {
-            html += `<div class="disclaimer">${prayerResponse.disclaimer}</div>`;
-        }
-        
-        responseEl.innerHTML = html;
-        this.dom.chatContainer.appendChild(responseEl);
-        this.scrollToBottom();
     }
 }
 
@@ -2943,13 +1887,12 @@ class VerseManager {
         try {
             const response = await fetch(`${Constants.WORKER_URL}/api/surah`);
             if (!response.ok) throw new Error('Failed to load surah list');
-            
+
             const data = await response.json();
             this.state.surahData = data;
             this.buildSurahMap();
             return true;
         } catch (error) {
-            console.error('Failed to load surah data:', error);
             return false;
         }
     }
@@ -3008,12 +1951,7 @@ class VerseManager {
         this.closeActionSheet();
 
         const surahInfo = this.state.surahMap.get(parseInt(surahNumber));
-        if (!surahInfo) {
-            this.chatManager.showError(
-                this.chatManager.getLocalizedText('Surah data not found.', 'Data surah tidak ditemukan.')
-            );
-            return;
-        }
+        if (!surahInfo) return;
 
         const userMessage = this.chatManager.getLocalizedText(
             `Show ${surahInfo.name} verse ${ayahNumber}`,
@@ -3033,11 +1971,9 @@ class VerseManager {
         const typingEl = this.chatManager.showTypingIndicator();
 
         try {
-            // Fetch Arabic text
             const arabicResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`);
             const arabicData = await arabicResponse.json();
-            
-            // Fetch translation
+
             const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`);
             const translationData = await translationResponse.json();
 
@@ -3049,7 +1985,7 @@ class VerseManager {
             const translationAyah = translationData.data.ayahs.find(ayah => ayah.numberInSurah === ayahNumber);
 
             typingEl.remove();
-            
+
             const verseData = {
                 surahNumber: parseInt(surahNumber),
                 surahName: surahInfo.name,
@@ -3064,39 +2000,29 @@ class VerseManager {
 
         } catch (error) {
             typingEl.remove();
-            this.chatManager.showError(
-                this.chatManager.getLocalizedText(
-                    `Failed to get verse ${surahNumber}:${ayahNumber}. Error: ${error.message}`,
-                    `Gagal mendapatkan ayat ${surahNumber}:${ayahNumber}. Error: ${error.message}`
-                )
-            );
+            this.chatManager.showError('Gagal memuat ayat Al-Quran.');
         }
     }
 
     openActionSheet() {
         this.dom.actionSheetOverlay.classList.add('active');
         this.dom.actionSheet.classList.add('active');
-        document.body.style.overflow = 'hidden';
 
         if (this.state.surahData.length > 0) {
             this.populateSurahSelect();
         } else {
-            this.dom.surahSelect.innerHTML = `<option>${this.chatManager.getLocalizedText('Loading Surahs...', 'Memuat Surah...')}</option>`;
-            this.dom.verseSelect.innerHTML = `<option>-</option>`;
-            this.loadSurahData().then(() => {
-                this.populateSurahSelect();
-            });
+            this.dom.surahSelect.innerHTML = `<option>Memuat Surah...</option>`;
+            this.loadSurahData().then(() => this.populateSurahSelect());
         }
     }
 
     closeActionSheet() {
         this.dom.actionSheetOverlay.classList.remove('active');
         this.dom.actionSheet.classList.remove('active');
-        document.body.style.overflow = '';
     }
 }
 
-// Voice Manager (Simplified)
+// Voice Manager
 class VoiceManager {
     constructor(state, dom, chatManager) {
         this.state = state;
@@ -3105,28 +2031,18 @@ class VoiceManager {
         this.speechManager = new WebSpeechManager();
         this.isListening = false;
         this.isSpeaking = false;
-        this.currentQuestion = '';
-        this.currentAnswer = '';
     }
 
     openVoicePanel() {
-        console.log('Opening minimal voice panel...');
-        
         this.dom.voiceOffcanvasOverlay.classList.add('active');
         this.dom.offcanvasVoice.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        // Set language
         this.speechManager.setLanguage(this.state.currentLanguage);
-        
-        // Reset UI
         this.stopWaveAnimation();
         this.resetMicButton();
     }
 
     toggleVoiceRecording() {
         const micButton = document.getElementById('micButton');
-        
         if (!this.isListening) {
             this.startVoiceRecording();
             micButton.classList.add('listening');
@@ -3138,55 +2054,25 @@ class VoiceManager {
 
     startVoiceRecording() {
         if (this.isListening) return;
-        
-        console.log('Starting voice recording...');
-        
-        // Show wave animation
+
         this.startWaveAnimation();
-        
-        // Start listening with Web Speech API
-        const success = this.speechManager.startListening(
-            () => {
-                // onStart
-                this.isListening = true;
-                console.log('Listening started');
-            },
+
+        this.speechManager.startListening(
+            () => { this.isListening = true; },
             (transcript) => {
-                // onResult
-                this.currentQuestion = transcript;
-                console.log('User said:', transcript);
-                
-                // Stop listening
                 this.stopVoiceRecording();
-                
-                // Process with AI
                 this.processQuestion(transcript);
             },
             (error) => {
-                // onError
-                console.error('Speech recognition error:', error);
                 this.isListening = false;
                 this.stopWaveAnimation();
                 this.resetMicButton();
-                
-                // Show brief error in chat
-                setTimeout(() => {
-                    this.chatManager.showError('Gagal mengenali suara. Coba lagi.');
-                }, 100);
             },
             () => {
-                // onEnd
                 this.isListening = false;
                 this.stopWaveAnimation();
-                console.log('Listening ended');
             }
         );
-        
-        if (!success) {
-            console.error('Failed to start speech recognition');
-            this.stopWaveAnimation();
-            this.resetMicButton();
-        }
     }
 
     stopVoiceRecording() {
@@ -3199,35 +2085,20 @@ class VoiceManager {
 
     async processQuestion(question) {
         try {
-            // Add user message to chat
             this.chatManager.appendUserMessage(question);
-            
-            // Show typing indicator in chat
             const typingEl = this.chatManager.showTypingIndicator();
-            
-            // Send to AI
+
             const response = await ApiService.sendQuestion(question, this.state.currentLanguage);
-            
             this.chatManager.removeTypingIndicator();
-            
+
             if (response.success) {
-                this.currentAnswer = response.answer;
-                
-                // Display AI response in chat
                 this.displayAIResponseInChat(response);
-                
-                // Save to chat history
                 this.chatManager.saveMessageToHistory(question, response, 'quran_ai');
-                
-                // Speak the response
                 this.speakResponse(response.answer);
-                
             } else {
                 this.chatManager.showError('AI tidak bisa menjawab saat ini.');
             }
-            
         } catch (error) {
-            console.error('Error processing question:', error);
             this.chatManager.showError('Terjadi kesalahan. Silakan coba lagi.');
         }
     }
@@ -3235,11 +2106,11 @@ class VoiceManager {
     displayAIResponseInChat(response) {
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
-        
+
         let html = `<div class="ai-text">${response.answer}</div>`;
-        
+
         if (response.verses_data && response.verses_data.length > 0) {
-            html += `<div class="verses-section" style="margin-top: 1rem;">`;
+            html += `<div class="verses-section">`;
             response.verses_data.forEach(verse => {
                 html += `
                     <div class="verse-container">
@@ -3251,11 +2122,7 @@ class VoiceManager {
             });
             html += `</div>`;
         }
-        
-        if (response.disclaimer) {
-            html += `<div class="disclaimer">${response.disclaimer}</div>`;
-        }
-        
+
         responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
         this.chatManager.scrollToBottom();
@@ -3263,100 +2130,37 @@ class VoiceManager {
 
     speakResponse(text) {
         const lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
-        
         this.speechManager.speak(text, {
             lang: lang,
             rate: 0.9,
-            pitch: 1.0,
-            volume: 1.0,
-            onStart: () => {
-                this.isSpeaking = true;
-                console.log('AI started speaking');
-            },
-            onEnd: () => {
-                this.isSpeaking = false;
-                console.log('AI finished speaking');
-                
-                // Auto-close voice panel after speaking (optional)
-                setTimeout(() => {
-                    if (!this.isListening) {
-                        this.closeVoicePanel();
-                    }
-                }, 1000);
-            },
-            onError: (error) => {
-                console.error('Speech synthesis error:', error);
-                this.isSpeaking = false;
-            }
+            onStart: () => { this.isSpeaking = true; },
+            onEnd: () => { this.isSpeaking = false; },
+            onError: () => { this.isSpeaking = false; }
         });
     }
 
     startWaveAnimation() {
         const waveBars = document.querySelector('.wave-bars');
-        if (waveBars) {
-            waveBars.classList.add('active');
-        }
+        if (waveBars) waveBars.classList.add('active');
     }
 
     stopWaveAnimation() {
         const waveBars = document.querySelector('.wave-bars');
-        if (waveBars) {
-            waveBars.classList.remove('active');
-        }
+        if (waveBars) waveBars.classList.remove('active');
     }
 
     resetMicButton() {
         const micButton = document.getElementById('micButton');
-        if (micButton) {
-            micButton.classList.remove('listening');
-        }
+        if (micButton) micButton.classList.remove('listening');
     }
 
     closeVoicePanel() {
-        // Stop any ongoing speech or listening
         this.stopVoiceRecording();
         this.speechManager.stopSpeaking();
-        
-        // Close panel
         this.dom.voiceOffcanvasOverlay.classList.remove('active');
         this.dom.offcanvasVoice.classList.remove('active');
-        document.body.style.overflow = '';
-        
-        // Reset
         this.stopWaveAnimation();
         this.resetMicButton();
-    }
-
-    autoClosePanel() {
-        // Auto close setelah 3 detik selesai berbicara
-        setTimeout(() => {
-            if (!this.isListening && !this.isSpeaking) {
-                this.closeVoicePanel();
-            }
-        }, 30000);
-    }
-    
-    speakResponse(text) {
-        const lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
-        
-        this.speechManager.speak(text, {
-            lang: lang,
-            rate: 0.9,
-            pitch: 1.0,
-            volume: 1.0,
-            onStart: () => {
-                this.isSpeaking = true;
-            },
-            onEnd: () => {
-                this.isSpeaking = false;
-                this.autoClosePanel(); // Auto close setelah selesai
-            },
-            onError: (error) => {
-                console.error('Speech synthesis error:', error);
-                this.isSpeaking = false;
-                this.autoClosePanel(); // Auto close meskipun error
-            }
-        });
     }
 }
 
@@ -3370,18 +2174,13 @@ class WebSpeechManager {
     }
 
     initSpeechRecognition() {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            console.warn('Speech Recognition not supported');
-            return;
-        }
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
-        
         this.recognition.continuous = false;
         this.recognition.interimResults = false;
         this.recognition.lang = 'id-ID';
-        this.recognition.maxAlternatives = 1;
 
         this.recognition.onstart = () => {
             this.isListening = true;
@@ -3394,7 +2193,6 @@ class WebSpeechManager {
         };
 
         this.recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
             this.isListening = false;
             if (this.onErrorCallback) this.onErrorCallback(event.error);
         };
@@ -3412,14 +2210,7 @@ class WebSpeechManager {
     }
 
     startListening(onStart, onResult, onError, onEnd) {
-        if (!this.recognition) {
-            if (onError) onError('Speech recognition not available');
-            return false;
-        }
-
-        if (this.isListening) {
-            this.stopListening();
-        }
+        if (!this.recognition) return false;
 
         this.onStartCallback = onStart;
         this.onResultCallback = onResult;
@@ -3430,8 +2221,6 @@ class WebSpeechManager {
             this.recognition.start();
             return true;
         } catch (error) {
-            console.error('Failed to start recognition:', error);
-            if (onError) onError(error.message);
             return false;
         }
     }
@@ -3444,34 +2233,15 @@ class WebSpeechManager {
     }
 
     speak(text, options = {}) {
-        if (!this.synth) {
-            console.warn('Speech synthesis not available');
-            return false;
-        }
+        if (!this.synth) return false;
 
-        // Cancel any ongoing speech
         if (this.isSpeaking) {
             this.synth.cancel();
         }
 
         const utterance = new SpeechSynthesisUtterance(text);
-        
         utterance.lang = options.lang || 'id-ID';
         utterance.rate = options.rate || 0.9;
-        utterance.pitch = options.pitch || 1.0;
-        utterance.volume = options.volume || 1.0;
-
-        // Find a suitable voice
-        const voices = this.synth.getVoices();
-        if (voices.length > 0) {
-            const preferredVoice = voices.find(voice => 
-                voice.lang.startsWith(utterance.lang)
-            ) || voices[0];
-            
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
-            }
-        }
 
         utterance.onstart = () => {
             this.isSpeaking = true;
@@ -3481,12 +2251,6 @@ class WebSpeechManager {
         utterance.onend = () => {
             this.isSpeaking = false;
             if (options.onEnd) options.onEnd();
-        };
-
-        utterance.onerror = (event) => {
-            this.isSpeaking = false;
-            console.error('Speech synthesis error:', event);
-            if (options.onError) options.onError(event);
         };
 
         this.synth.speak(utterance);
@@ -3556,7 +2320,6 @@ class QuranAIApp {
         this.voiceManager = new VoiceManager(this.state, this.dom, this.chatManager);
         this.aiHandler = new AIResponseHandler(this.state, this.dom, this.chatManager);
 
-        // Bind methods
         this.sendMessage = this.sendMessage.bind(this);
         this.toggleLanguage = this.toggleLanguage.bind(this);
         this.openOffcanvasMenu = this.openOffcanvasMenu.bind(this);
@@ -3567,10 +2330,7 @@ class QuranAIApp {
     }
 
     async init() {
-        if (!this.dom.validate()) {
-            console.error('Required DOM elements not found');
-            return;
-        }
+        if (!this.dom.validate()) return;
 
         this.setupEventListeners();
         await this.loadInitialData();
@@ -3578,13 +2338,9 @@ class QuranAIApp {
     }
 
     async loadInitialData() {
-        // Load chat history from database
         await this.chatManager.loadFromDatabase();
-        
-        // Load surah data
         await this.verseManager.loadSurahData();
-        
-        // Load first chat if available
+
         if (this.state.chatHistory.length > 0) {
             await this.chatManager.loadChat(this.state.chatHistory[0].id);
         }
@@ -3593,12 +2349,12 @@ class QuranAIApp {
     updateUI() {
         this.dom.langLabel.textContent = Constants.SUPPORTED_LANGUAGES[this.state.currentLanguage];
         this.dom.languageToggle.checked = this.state.currentLanguage === 'en';
-        
+
         this.dom.messageInput.placeholder = this.chatManager.getLocalizedText(
             'Ask about the Quran...',
             'Tanyakan tentang Al-Quran...'
         );
-        
+
         const welcomeText = this.dom.welcomeState.querySelector('.welcome-text');
         if (welcomeText) {
             welcomeText.textContent = this.chatManager.getLocalizedText(
@@ -3609,108 +2365,78 @@ class QuranAIApp {
     }
 
     setupEventListeners() {
-        // Message input events
         this.dom.sendBtn.addEventListener('click', this.sendMessage);
-        
+
         this.dom.messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
             }
         });
-        
+
         this.dom.messageInput.addEventListener('input', () => {
             this.dom.messageInput.style.height = 'auto';
             this.dom.messageInput.style.height = `${this.dom.messageInput.scrollHeight}px`;
             this.updateSendButtonState();
         });
-        
-        // Sidebar events
+
         this.dom.menuIcon.addEventListener('click', this.openOffcanvasMenu);
         this.dom.offcanvasOverlay.addEventListener('click', this.closeOffcanvasMenu);
         if (this.dom.closeOffcanvas) {
             this.dom.closeOffcanvas.addEventListener('click', this.closeOffcanvasMenu);
         }
-        
+
         this.dom.newChatBtn.addEventListener('click', () => {
             this.chatManager.createNewChat();
         });
-        
-        // Language toggle
+
         this.dom.languageToggle.addEventListener('change', this.toggleLanguage);
-        
-        // Verse selection events
+
         this.dom.selectVerseBtn.addEventListener('click', () => {
             this.verseManager.openActionSheet();
         });
-        
+
         if (this.dom.closeActionSheet) {
             this.dom.closeActionSheet.addEventListener('click', () => {
                 this.verseManager.closeActionSheet();
             });
         }
-        
+
         if (this.dom.actionSheetOverlay) {
             this.dom.actionSheetOverlay.addEventListener('click', () => {
                 this.verseManager.closeActionSheet();
             });
         }
-        
+
         if (this.dom.surahSelect) {
             this.dom.surahSelect.addEventListener('change', () => {
                 this.verseManager.populateVerseSelect();
             });
         }
-        
+
         if (this.dom.goVerseBtn) {
             this.dom.goVerseBtn.addEventListener('click', () => {
                 this.verseManager.getSpecificVerse();
             });
         }
-        
-        // Voice panel events
+
         if (this.dom.waveBtn) {
-            this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice.bind(this));
+            this.dom.waveBtn.addEventListener('click', this.openOffcanvasVoice);
         }
 
         if (this.dom.closeOffcanvasVoice) {
-            this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+            this.dom.closeOffcanvasVoice.addEventListener('click', this.closeOffcanvasVoice);
         }
 
         if (this.dom.voiceOffcanvasOverlay) {
-            this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice.bind(this));
+            this.dom.voiceOffcanvasOverlay.addEventListener('click', this.closeOffcanvasVoice);
         }
 
-        // Mic button event
         document.addEventListener('click', (e) => {
             if (e.target.closest('#micButton')) {
                 this.voiceManager.toggleVoiceRecording();
             }
         });
-
-        // Keyboard shortcut untuk voice panel
-        document.addEventListener('keydown', (e) => {
-            // Ctrl + Space untuk buka/close voice panel
-            if (e.ctrlKey && e.code === 'Space') {
-                e.preventDefault();
-                if (this.dom.offcanvasVoice.classList.contains('active')) {
-                    this.closeOffcanvasVoice();
-                } else {
-                    this.openOffcanvasVoice();
-                }
-            }
-            
-            // Esc untuk close voice panel
-            if (e.code === 'Escape' && this.dom.offcanvasVoice.classList.contains('active')) {
-                this.closeOffcanvasVoice();
-            }
-        });
-        
-        if (document.getElementById('prayerBtn')) {
-            document.getElementById('prayerBtn').addEventListener('click', () => {
-                this.openPrayerReadings();
-            });
-        }
     }
 
     async sendMessage() {
@@ -3736,28 +2462,23 @@ class QuranAIApp {
         try {
             const response = await ApiService.sendQuestion(userMessage, this.state.currentLanguage);
             typingEl.remove();
-            
+
             this.aiHandler.displayAIResponse(response);
             await this.chatManager.saveMessageToHistory(userMessage, response, 'quran_ai');
-            
+
         } catch (error) {
             typingEl.remove();
-            this.chatManager.showError(
-                this.chatManager.getLocalizedText(
-                    'An error occurred while processing the response. Please try again.',
-                    'Terjadi kesalahan saat memproses respons. Silakan coba lagi.'
-                )
-            );
+            this.chatManager.showError('Terjadi kesalahan saat memproses respons. Silakan coba lagi.');
         }
     }
 
     toggleLanguage() {
         const newLanguage = this.dom.languageToggle.checked ? 'en' : 'id';
-        
+
         if (this.state.setLanguage(newLanguage)) {
             this.updateUI();
             this.chatManager.renderChatHistory();
-            
+
             if (this.state.currentChatId) {
                 const currentChat = this.state.chatHistory.find(c => c.id === this.state.currentChatId);
                 if (currentChat) {
@@ -3769,17 +2490,13 @@ class QuranAIApp {
 
     updateSendButtonState() {
         const hasText = this.dom.messageInput.value.trim().length > 0;
-        
+
         if (hasText) {
             this.dom.sendBtn.classList.add('visible');
-            if (this.dom.waveBtn) {
-                this.dom.waveBtn.classList.add('hidden');
-            }
+            if (this.dom.waveBtn) this.dom.waveBtn.classList.add('hidden');
         } else {
             this.dom.sendBtn.classList.remove('visible');
-            if (this.dom.waveBtn) {
-                this.dom.waveBtn.classList.remove('hidden');
-            }
+            if (this.dom.waveBtn) this.dom.waveBtn.classList.remove('hidden');
         }
     }
 
@@ -3787,14 +2504,12 @@ class QuranAIApp {
         this.dom.offcanvasOverlay.classList.add('active');
         this.dom.offcanvasSidebar.classList.add('active');
         this.dom.menuIcon.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     closeOffcanvasMenu() {
         this.dom.offcanvasOverlay.classList.remove('active');
         this.dom.offcanvasSidebar.classList.remove('active');
         this.dom.menuIcon.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     openOffcanvasVoice() {
@@ -3804,81 +2519,17 @@ class QuranAIApp {
     closeOffcanvasVoice() {
         this.voiceManager.closeVoicePanel();
     }
-    
-    openPrayerReadings() {
-        const userMessage = "Tampilkan bacaan sholat";
-        this.chatManager.appendUserMessage(userMessage);
-    
-        if (this.state.isFirstMessage) {
-            this.chatManager.hideWelcomeState();
-            this.state.isFirstMessage = false;
-            if (this.state.currentChatId === null) {
-                this.chatManager.createNewChat(false);
-            }
-        }
-    
-        const typingEl = this.chatManager.showTypingIndicator();
-    
-        ApiService.fetchPrayerSequence()
-            .then(response => {
-                typingEl.remove();
-                
-                if (response.success && response.data) {
-                    const responseEl = document.createElement('div');
-                    responseEl.className = 'ai-response';
-                    
-                    let html = `
-                        <div style="margin-bottom: 1.5rem;">
-                            <h3 style="color: #4285f4; margin-bottom: 1rem;">Bacaan Sholat Lengkap</h3>
-                            <p style="margin-bottom: 1rem;">Berikut adalah bacaan-bacaan sholat sesuai urutan dalam sholat:</p>
-                        </div>
-                    `;
-                    
-                    response.data.forEach((prayer, index) => {
-                        html += `
-                            <div class="prayer-item" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 0.75rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                                    <span style="font-weight: 500; color: #4285f4;">${index + 1}. ${prayer.name}</span>
-                                    <span style="font-size: 0.8rem; background: rgba(66, 133, 244, 0.2); padding: 0.25rem 0.5rem; border-radius: 1rem;">${prayer.category}</span>
-                                </div>
-                                <div dir="rtl" style="font-size: 1.3rem; margin-bottom: 0.5rem; text-align: right;">${prayer.arabic}</div>
-                                <div style="font-style: italic; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">${prayer.latin}</div>
-                                <div style="margin-bottom: 0.5rem;"><strong>Terjemahan:</strong> ${prayer.translation}</div>
-                                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${prayer.description}</div>
-                            </div>
-                        `;
-                    });
-                    
-                    responseEl.innerHTML = html;
-                    this.dom.chatContainer.appendChild(responseEl);
-                    
-                    this.chatManager.saveMessageToHistory(
-                        userMessage,
-                        { type: 'prayer_sequence', data: response.data },
-                        'prayer'
-                    );
-                    
-                } else {
-                    this.chatManager.showError('Gagal memuat bacaan sholat');
-                }
-                
-                this.chatManager.scrollToBottom();
-            })
-            .catch(error => {
-                typingEl.remove();
-                this.chatManager.showError('Error: ' + error.message);
-            });
-    }
 }
 
-// Initialize application when DOM is ready
+// Global Alias
+const App = QuranAIApp;
+
 document.addEventListener('DOMContentLoaded', () => {
     const app = new QuranAIApp();
     window.quranAIApp = app;
     app.init();
 });
 
-// Initialize Lucide icons
 if (window.lucide) {
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
@@ -3890,11 +2541,8 @@ if (window.lucide) {
     <script src="https://elevenlabs.io/agent-widget/index.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-        const app = new App();
-        app.init();
-
-        const agentOptions = {
-            agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
+            const agentOptions = {
+                agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
                 voice: {
                     voiceId: "21m00Tcm4TlvDq8ikWAM",
                     modelId: "eleven_multilingual_v2",
@@ -3905,8 +2553,8 @@ if (window.lucide) {
                 },
                 ui: {
                     customTheme: {
-                        primaryColor: "#4285f4",
-                        backgroundColor: "#1e1f20",
+                        primaryColor: "#3b82f6",
+                        backgroundColor: "#18181b",
                         textColor: "#ffffff"
                     }
                 },
@@ -3917,97 +2565,24 @@ if (window.lucide) {
                             description: "AI assistant khusus untuk pertanyaan seputar Al-Quran",
                             api_schema: {
                                 url: "https://ai-quran-workers.harisudahmalam.workers.dev/api/elevenhook",
-                                method: "POST",
-                                request_body_schema: {
-                                    id: "quran_ai_request",
-                                    type: "object",
-                                    description: "Request body for Quran AI Assistant",
-                                    required: true,
-                                    properties: [
-                                        {
-                                            id: "input",
-                                            type: "string",
-                                            description: "Pertanyaan dari pengguna",
-                                            required: true,
-                                            dynamic_variable: "",
-                                            constant_value: ""
-                                        },
-                                        {
-                                            id: "session_id",
-                                            type: "string",
-                                            description: "Session ID percakapan",
-                                            required: false,
-                                            dynamic_variable: "",
-                                            constant_value: ""
-                                        },
-                                        {
-                                            id: "variables",
-                                            type: "object",
-                                            description: "Variables context",
-                                            required: false,
-                                            dynamic_variable: "",
-                                            constant_value: "",
-                                            properties: [
-                                                {
-                                                    id: "example_key",
-                                                    type: "string",
-                                                    description: "Example property for object type",
-                                                    required: false,
-                                                    dynamic_variable: "",
-                                                    constant_value: ""
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            id: "tool_calls",
-                                            type: "array",
-                                            description: "Tool calls array",
-                                            required: false,
-                                            dynamic_variable: "",
-                                            constant_value: "",
-                                            items: {
-                                                type: "object",
-                                                description: "Tool call item",
-                                                required: false,
-                                                properties: [
-                                                    {
-                                                        id: "tool_id",
-                                                        type: "string",
-                                                        description: "ID of the tool",
-                                                        required: false,
-                                                        dynamic_variable: "",
-                                                        constant_value: ""
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ]
-                                }
+                                method: "POST"
                             }
                         }
                     ]
                 }
             };
-            const agent = new window.ElevenLabs.Agent(agentOptions);
-        window.ustadAgent = agent;
-        const waveBtn = document.getElementById('waveBtn');
-        if (waveBtn) {
-            waveBtn.addEventListener('click', function() {
-                agent.toggle();
-            });
-        }
-        agent.on('speaking', function() {
-            console.log('Agent sedang berbicara');
+            
+            if (window.ElevenLabs && window.ElevenLabs.Agent) {
+                const agent = new window.ElevenLabs.Agent(agentOptions);
+                window.ustadAgent = agent;
+                const waveBtn = document.getElementById('waveBtn');
+                if (waveBtn) {
+                    waveBtn.addEventListener('click', function() {
+                        if (agent && agent.toggle) agent.toggle();
+                    });
+                }
+            }
         });
-
-        agent.on('listening', function() {
-            console.log('Agent sedang mendengarkan');
-        });
-
-        agent.on('error', function(error) {
-            console.error('Agent error:', error);
-        });
-    });
     </script>
-    </body>
+</body>
 </html>
