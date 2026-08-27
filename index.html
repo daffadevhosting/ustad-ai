@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ustad - AI Quran</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1003,7 +1003,7 @@
 
     <div class="offcanvas-sidebar" id="offcanvasSidebar">
         <div class="offcanvas-header">
-            <div class="offcanvas-title">Riwayat Percakapan</div>
+            <div class="offcanvas-title" data-i18n="chatHistory">Riwayat Percakapan</div>
             <button class="close-offcanvas" id="closeOffcanvas">&times;</button>
         </div>
         <div class="offcanvas-body">
@@ -1011,12 +1011,12 @@
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
-                <span>Obrolan Baru</span>
+                <span data-i18n="newChat">Obrolan Baru</span>
             </button>
 
-            <div class="chat-history-title">Obrolan Terbaru</div>
+            <div class="chat-history-title" data-i18n="recentChats">Obrolan Terbaru</div>
             <div class="chat-history-list" id="chatHistoryList">
-                <div class="no-chats-message">Belum ada riwayat percakapan</div>
+                <div class="no-chats-message" data-i18n="noChatHistory">Belum ada riwayat percakapan</div>
             </div>
         </div>
     </div>
@@ -1026,7 +1026,7 @@
         <div class="offcanvas-voice-header">
             <h3 class="offcanvas-voice-title">
                 <i data-lucide="mic"></i>
-                Ustad Voice
+                <span data-i18n="ustadVoice">Ustad Voice</span>
             </h3>
             <button class="close-offcanvas" id="closeOffcanvasVoice">
                 <i data-lucide="x"></i>
@@ -1067,8 +1067,8 @@
                 <path fill="url(#sparkleGradient)" d="M19 3L19.5 5.5L22 6L19.5 6.5L19 9L18.5 6.5L16 6L18.5 5.5L19 3Z"/>
                 <path fill="url(#sparkleGradient)" d="M5 15L5.5 17L7 17.5L5.5 18L5 20L4.5 18L3 17.5L4.5 17L5 15Z"/>
             </svg>
-            <div class="welcome-salutation">Assalamualaikum</div>
-            <p class="welcome-text">Ada yang bisa saya bantu tentang Al-Quran?</p>
+            <div class="welcome-salutation" data-i18n="salutation">Assalamualaikum</div>
+            <p class="welcome-text" data-i18n="welcomeText">Ada yang bisa saya bantu tentang Al-Quran?</p>
         </div>
 
         <div class="chat-container" id="chatContainer"></div>
@@ -1077,18 +1077,18 @@
     <div class="input-area" id="inputArea">
         <div class="input-wrapper">
             <div class="input-field">
-                <textarea placeholder="Tanyakan tentang Al-Quran..." id="messageInput" rows="1"></textarea>
+                <textarea placeholder="Tanyakan tentang Al-Quran..." id="messageInput" rows="1" data-i18n-placeholder="placeholder"></textarea>
             </div>
             <div class="input-actions">
                 <div class="left-actions">
-                    <button class="verse-btn" id="selectVerseBtn" title="Pilih Ayat">
+                    <button class="verse-btn" id="selectVerseBtn" data-i18n-title="selectVerseTitle" title="Pilih Ayat">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                         </svg>
                     </button>
 
-                    <button class="pry-btn hidden" id="prayerBtn" title="Bacaan Sholat">
+                    <button class="pry-btn hidden" id="prayerBtn" data-i18n-title="prayerTitle" title="Bacaan Sholat">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                         </svg>
@@ -1096,7 +1096,7 @@
                 </div>
 
                 <div class="right-actions">
-                    <button class="wave-btn" id="waveBtn" title="Voice Assistant">
+                    <button class="wave-btn" id="waveBtn" data-i18n-title="voiceTitle" title="Voice Assistant">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -1119,36 +1119,116 @@
     <div class="action-sheet-overlay" id="actionSheetOverlay"></div>
     <div class="action-sheet" id="actionSheet">
         <div class="action-sheet-header">
-            <div class="action-sheet-title">Pilih Ayat Al-Quran</div>
+            <div class="action-sheet-title" data-i18n="selectVerse">Pilih Ayat Al-Quran</div>
             <button class="close-action-sheet" id="closeActionSheet">&times;</button>
         </div>
         <div class="action-sheet-body">
             <div class="verse-selection-controls">
-                <label for="surahSelect">Surah:</label>
+                <label for="surahSelect" data-i18n="surahLabel">Surah:</label>
                 <select id="surahSelect" class="styled-select"></select>
-                <label for="verseSelect">Ayat:</label>
+                <label for="verseSelect" data-i18n="verseLabel">Ayat:</label>
                 <select id="verseSelect" class="styled-select"></select>
             </div>
-            <button class="select-verse-btn" id="goVerseBtn">
+            <button class="select-verse-btn" id="goVerseBtn" data-i18n="showVerse">
                 Tampilkan Ayat
             </button>
         </div>
     </div>
 
 <script>
-// Quran AI Chat Application - D1 VERSION
+// Quran AI Chat Application - Full i18n Version
 // ===============================================
+
+// Full Translations Dictionary
+const TRANSLATIONS = {
+    id: {
+        chatHistory: "Riwayat Percakapan",
+        newChat: "Obrolan Baru",
+        recentChats: "Obrolan Terbaru",
+        noChatHistory: "Belum ada riwayat percakapan",
+        ustadVoice: "Ustad Voice",
+        salutation: "Assalamualaikum",
+        welcomeText: "Ada yang bisa saya bantu tentang Al-Quran?",
+        placeholder: "Tanyakan tentang Al-Quran...",
+        selectVerseTitle: "Pilih Ayat",
+        prayerTitle: "Bacaan Sholat",
+        voiceTitle: "Asisten Suara",
+        selectVerse: "Pilih Ayat Al-Quran",
+        surahLabel: "Surah:",
+        verseLabel: "Ayat:",
+        showVerse: "Tampilkan Ayat",
+        verseHeader: "Ayat Al-Quran",
+        translationLabel: "Terjemahan:",
+        loadingSurah: "Memuat Surah...",
+        versePrefix: "Ayat",
+        deleteConfirm: "Apakah Anda yakin ingin menghapus percakapan ini?",
+        deleteTitle: "Hapus",
+        today: "Hari ini",
+        yesterday: "Kemarin",
+        chatNotFound: "Percakapan tidak ditemukan",
+        loadChatFailed: "Gagal memuat percakapan",
+        loadVerseFailed: "Gagal memuat ayat Al-Quran.",
+        translationUnavailable: "Terjemahan tidak tersedia",
+        aiCannotAnswer: "AI tidak bisa menjawab saat ini.",
+        errorOccurred: "Terjadi kesalahan. Silakan coba lagi.",
+        processError: "Terjadi kesalahan saat memproses respons. Silakan coba lagi.",
+        newChatTitle: "Obrolan Baru",
+        showVerseMsg: (name, num) => `${name} ayat ${num}`,
+        verseOption: (i) => `Ayat ${i}`,
+        ayahsUnit: "ayat"
+    },
+    en: {
+        chatHistory: "Chat History",
+        newChat: "New Chat",
+        recentChats: "Recent Chats",
+        noChatHistory: "No chat history yet",
+        ustadVoice: "Ustad Voice",
+        salutation: "Assalamualaikum",
+        welcomeText: "How can I help you regarding the Quran?",
+        placeholder: "Ask about the Quran...",
+        selectVerseTitle: "Select Verse",
+        prayerTitle: "Prayer Readings",
+        voiceTitle: "Voice Assistant",
+        selectVerse: "Select Quran Verse",
+        surahLabel: "Surah:",
+        verseLabel: "Verse:",
+        showVerse: "Show Verse",
+        verseHeader: "Quran Verse",
+        translationLabel: "Translation:",
+        loadingSurah: "Loading Surah...",
+        versePrefix: "Verse",
+        deleteConfirm: "Are you sure you want to delete this conversation?",
+        deleteTitle: "Delete",
+        today: "Today",
+        yesterday: "Yesterday",
+        chatNotFound: "Conversation not found",
+        loadChatFailed: "Failed to load conversation",
+        loadVerseFailed: "Failed to load Quran verse.",
+        translationUnavailable: "Translation not available",
+        aiCannotAnswer: "AI cannot answer at the moment.",
+        errorOccurred: "An error occurred. Please try again.",
+        processError: "An error occurred while processing the response. Please try again.",
+        newChatTitle: "New Chat",
+        showVerseMsg: (name, num) => `Show ${name} verse ${num}`,
+        verseOption: (i) => `Verse ${i}`,
+        ayahsUnit: "verses"
+    }
+};
 
 // Constants
 const Constants = {
     WORKER_URL: 'https://ai-quran-workers.harisudahmalam.workers.dev',
     SURAH_API_URL: 'https://api.alquran.cloud/v1/surah',
-    TRANSLATION_LANG: 'id.indonesian',
     ARABIC_FONT: 'quran-uthmani',
     DEFAULT_LANGUAGE: 'id',
     SUPPORTED_LANGUAGES: {
         id: 'ID',
         en: 'EN'
+    },
+    // Translation editions for alquran.cloud
+    TRANSLATION_EDITIONS: {
+        id: 'id.indonesian',
+        en: 'en.sahih'
     }
 };
 
@@ -1175,6 +1255,13 @@ class AppState {
         return userId;
     }
 
+    dual() {
+        this.currentChatId = null;
+        this.isFirstMessage = true;
+        this.mediaRecorder = null;
+        this.isRecording = false;
+    }
+
     reset() {
         this.currentChatId = null;
         this.isFirstMessage = true;
@@ -1186,9 +1273,19 @@ class AppState {
         if (Object.keys(Constants.SUPPORTED_LANGUAGES).includes(lang)) {
             this.currentLanguage = lang;
             document.documentElement.lang = lang;
+            localStorage.setItem('quran_lang', lang);
             return true;
         }
         return false;
+    }
+
+    t(key, ...args) {
+        const dict = TRANSLATIONS[this.currentLanguage] || TRANSLATIONS.id;
+        const value = dict[key];
+        if (typeof value === 'function') {
+            return value(...args);
+        }
+        return value || key;
     }
 }
 
@@ -1530,7 +1627,7 @@ class ChatManager {
         const chatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const newChat = {
             id: chatId,
-            title: this.getLocalizedText('New Chat', 'Obrolan Baru'),
+            title: this.state.t('newChatTitle'),
             messages: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -1586,7 +1683,7 @@ class ChatManager {
             }
 
             if (!chat) {
-                this.showError('Percakapan tidak ditemukan');
+                this.showError(this.state.t('chatNotFound'));
                 return;
             }
 
@@ -1626,7 +1723,7 @@ class ChatManager {
             this.scrollToBottom();
         } catch (error) {
             console.error('Failed to load chat:', error);
-            this.showError('Gagal memuat percakapan');
+            this.showError(this.state.t('loadChatFailed'));
         }
     }
 
@@ -1659,7 +1756,7 @@ class ChatManager {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
-                <span>Ayat Al-Quran</span>
+                <span>${this.state.t('verseHeader')}</span>
             </div>
             <div class="verse-header">
                 <span class="surah-title">${verseData.surahNameArabic || verseData.surahName} (${verseData.surahNumber}:${verseData.ayahNumber})</span>
@@ -1668,7 +1765,7 @@ class ChatManager {
                 ${verseData.arabicText}
             </div>
             <div class="translation-text">
-                ${this.getLocalizedText('Translation:', 'Terjemahan:')} ${verseData.translationText}
+                ${this.state.t('translationLabel')} ${verseData.translationText}
             </div>
         `;
 
@@ -1735,7 +1832,7 @@ class ChatManager {
     }
 
     updateChatTitle(title) {
-        this.dom.chatTitle.innerHTML = `<span class="logo-icon">${title || this.getLocalizedText('Ustad', 'Ustad')}</span> AI`;
+        this.dom.chatTitle.innerHTML = `<span class="logo-icon">${title || 'Ustad'}</span> AI`;
     }
 
     scrollToBottom() {
@@ -1784,7 +1881,7 @@ class ChatManager {
         if (this.state.chatHistory.length === 0) {
             this.dom.chatHistoryList.innerHTML = `
                 <div class="no-chats-message">
-                    ${this.getLocalizedText('No chat history yet.', 'Belum ada riwayat percakapan')}
+                    ${this.state.t('noChatHistory')}
                 </div>
             `;
             return;
@@ -1800,7 +1897,7 @@ class ChatManager {
                     <div class="chat-preview-title">${chat.title}</div>
                     <div class="chat-preview-date">${this.formatDate(chat.updatedAt || chat.createdAt)}</div>
                 </div>
-                <button class="delete-chat-btn" data-chat-id="${chat.id}" title="${this.getLocalizedText('Delete', 'Hapus')}">
+                <button class="delete-chat-btn" data-chat-id="${chat.id}" title="${this.state.t('deleteTitle')}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 6h18"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -1821,10 +1918,7 @@ class ChatManager {
     }
 
     async deleteChat(chatId) {
-        const message = this.getLocalizedText(
-            'Are you sure you want to delete this conversation?',
-            'Apakah Anda yakin ingin menghapus percakapan ini?'
-        );
+        const message = this.state.t('deleteConfirm');
 
         if (!confirm(message)) return;
 
@@ -1894,19 +1988,15 @@ class ChatManager {
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays === 0) {
-            return this.getLocalizedText('Today', 'Hari ini');
+            return this.state.t('today');
         } else if (diffDays === 1) {
-            return this.getLocalizedText('Yesterday', 'Kemarin');
+            return this.state.t('yesterday');
         } else {
             return date.toLocaleDateString(this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US', {
                 day: 'numeric',
                 month: 'short'
             });
         }
-    }
-
-    getLocalizedText(english, indonesian) {
-        return this.state.currentLanguage === 'id' ? indonesian : english;
     }
 }
 
@@ -1952,7 +2042,7 @@ class VerseManager {
         this.state.surahData.forEach(surah => {
             const option = document.createElement('option');
             option.value = surah.id;
-            option.textContent = `${surah.id}. ${surah.name} (${surah.translation}) - ${surah.total_verses} ayat`;
+            option.textContent = `${surah.id}. ${surah.name} (${surah.translation}) - ${surah.total_verses} ${this.state.t('ayahsUnit')}`;
             this.dom.surahSelect.appendChild(option);
         });
 
@@ -1971,7 +2061,7 @@ class VerseManager {
             for (let i = 1; i <= selectedSurah.ayahs; i++) {
                 const option = document.createElement('option');
                 option.value = i;
-                option.textContent = this.chatManager.getLocalizedText(`Verse ${i}`, `Ayat ${i}`);
+                option.textContent = this.state.t('verseOption', i);
                 this.dom.verseSelect.appendChild(option);
             }
         }
@@ -1988,10 +2078,7 @@ class VerseManager {
         const surahInfo = this.state.surahMap.get(parseInt(surahNumber));
         if (!surahInfo) return;
 
-        const userMessage = this.chatManager.getLocalizedText(
-            `Show ${surahInfo.name} verse ${ayahNumber}`,
-            `${surahInfo.name} ayat ${ayahNumber}`
-        );
+        const userMessage = this.state.t('showVerseMsg', surahInfo.name, ayahNumber);
 
         this.chatManager.appendUserMessage(userMessage);
 
@@ -2009,7 +2096,9 @@ class VerseManager {
             const arabicResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/quran-uthmani`);
             const arabicData = await arabicResponse.json();
 
-            const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/id.indonesian`);
+            // Use correct translation edition based on current language
+            const edition = Constants.TRANSLATION_EDITIONS[this.state.currentLanguage] || Constants.TRANSLATION_EDITIONS.id;
+            const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${edition}`);
             const translationData = await translationResponse.json();
 
             if (arabicData.code !== 200 || translationData.code !== 200) {
@@ -2027,7 +2116,7 @@ class VerseManager {
                 surahNameArabic: surahInfo.nameArabic,
                 ayahNumber: ayahNumber,
                 arabicText: arabicAyah?.text || '',
-                translationText: translationAyah?.text || 'Terjemahan tidak tersedia'
+                translationText: translationAyah?.text || this.state.t('translationUnavailable')
             };
 
             this.chatManager.displayVerseResponse(verseData);
@@ -2035,7 +2124,7 @@ class VerseManager {
 
         } catch (error) {
             typingEl.remove();
-            this.chatManager.showError('Gagal memuat ayat Al-Quran.');
+            this.chatManager.showError(this.state.t('loadVerseFailed'));
         }
     }
 
@@ -2046,7 +2135,7 @@ class VerseManager {
         if (this.state.surahData.length > 0) {
             this.populateSurahSelect();
         } else {
-            this.dom.surahSelect.innerHTML = `<option>Memuat Surah...</option>`;
+            this.dom.surahSelect.innerHTML = `<option>${this.state.t('loadingSurah')}</option>`;
             this.loadSurahData().then(() => this.populateSurahSelect());
         }
     }
@@ -2131,10 +2220,10 @@ class VoiceManager {
                 this.chatManager.saveMessageToHistory(question, response, 'quran_ai');
                 this.speakResponse(response.answer);
             } else {
-                this.chatManager.showError('AI tidak bisa menjawab saat ini.');
+                this.chatManager.showError(this.state.t('aiCannotAnswer'));
             }
         } catch (error) {
-            this.chatManager.showError('Terjadi kesalahan. Silakan coba lagi.');
+            this.chatManager.showError(this.state.t('errorOccurred'));
         }
     }
 
@@ -2351,7 +2440,7 @@ class AIResponseHandler {
             }
 
         } else {
-            html += `<div class="error-message">${backendResponse.error || 'Terjadi kesalahan'}</div>`;
+            html += `<div class="error-message">${backendResponse.error || this.state.t('errorOccurred')}</div>`;
         }
 
         responseEl.innerHTML = html;
@@ -2383,9 +2472,15 @@ class QuranAIApp {
     async init() {
         if (!this.dom.validate()) return;
 
+        // Restore saved language preference
+        const savedLang = localStorage.getItem('quran_lang');
+        if (savedLang && (savedLang === 'id' || savedLang === 'en')) {
+            this.state.setLanguage(savedLang);
+        }
+
         this.setupEventListeners();
         await this.loadInitialData();
-        this.updateUI();
+        this.applyLanguage();
     }
 
     async loadInitialData() {
@@ -2397,21 +2492,41 @@ class QuranAIApp {
         }
     }
 
-    updateUI() {
-        this.dom.langLabel.textContent = Constants.SUPPORTED_LANGUAGES[this.state.currentLanguage];
-        this.dom.languageToggle.checked = this.state.currentLanguage === 'en';
+    // Full UI translation applicator
+    applyLanguage() {
+        const lang = this.state.currentLanguage;
 
-        this.dom.messageInput.placeholder = this.chatManager.getLocalizedText(
-            'Ask about the Quran...',
-            'Tanyakan tentang Al-Quran...'
-        );
+        // Update lang label & toggle
+        this.dom.langLabel.textContent = Constants.SUPPORTED_LANGUAGES[lang];
+        this.dom.languageToggle.checked = lang === 'en';
 
-        const welcomeText = this.dom.welcomeState.querySelector('.welcome-text');
-        if (welcomeText) {
-            welcomeText.textContent = this.chatManager.getLocalizedText(
-                'How can I help you regarding the Quran?',
-                'Ada yang bisa saya bantu tentang Al-Quran?'
-            );
+        // Update all elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = this.state.t(key);
+        });
+
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            el.placeholder = this.state.t(key);
+        });
+
+        // Update titles
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            el.title = this.state.t(key);
+        });
+
+        // Re-render chat history (dates, empty state, etc)
+        this.chatManager.renderChatHistory();
+
+        // Update current chat title if needed
+        if (this.state.currentChatId) {
+            const currentChat = this.state.chatHistory.find(c => c.id === this.state.currentChatId);
+            if (currentChat) {
+                this.chatManager.updateChatTitle(currentChat.title);
+            }
         }
     }
 
@@ -2527,7 +2642,7 @@ class QuranAIApp {
 
         } catch (error) {
             typingEl.remove();
-            this.chatManager.showError('Terjadi kesalahan saat memproses respons. Silakan coba lagi.');
+            this.chatManager.showError(this.state.t('processError'));
         }
     }
 
@@ -2535,15 +2650,7 @@ class QuranAIApp {
         const newLanguage = this.dom.languageToggle.checked ? 'en' : 'id';
 
         if (this.state.setLanguage(newLanguage)) {
-            this.updateUI();
-            this.chatManager.renderChatHistory();
-
-            if (this.state.currentChatId) {
-                const currentChat = this.state.chatHistory.find(c => c.id === this.state.currentChatId);
-                if (currentChat) {
-                    this.chatManager.updateChatTitle(currentChat.title);
-                }
-            }
+            this.applyLanguage();
         }
     }
 
@@ -2630,7 +2737,7 @@ if (window.lucide) {
                     ]
                 }
             };
-            
+
             if (window.ElevenLabs && window.ElevenLabs.Agent) {
                 const agent = new window.ElevenLabs.Agent(agentOptions);
                 window.ustadAgent = agent;
