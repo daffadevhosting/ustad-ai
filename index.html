@@ -2454,128 +2454,260 @@ class VerseManager {
 }
 
 // Voice Manager
+// ========== Voice Manager — ElevenLabs REST API via /api/voice-ask ==========
 class VoiceManager {
     constructor(state, dom, chatManager) {
         this.state = state;
         this.dom = dom;
         this.chatManager = chatManager;
-        this.speechManager = new WebSpeechManager();
         this.isListening = false;
-        this.isSpeaking = false;
+        this.isProcessing = false;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.stream = null;
+        this.currentAudio = null;
     }
 
     openVoicePanel() {
         this.dom.voiceOffcanvasOverlay.classList.add('active');
         this.dom.offcanvasVoice.classList.add('active');
-        this.speechManager.setLanguage(this.state.currentLanguage);
         this.stopWaveAnimation();
         this.resetMicButton();
     }
 
     toggleVoiceRecording() {
+        if (this.isProcessing) return;
+
         const micButton = document.getElementById('micButton');
         if (!this.isListening) {
             this.startVoiceRecording();
-            micButton.classList.add('listening');
+            if (micButton) micButton.classList.add('listening');
         } else {
             this.stopVoiceRecording();
-            micButton.classList.remove('listening');
+            if (micButton) micButton.classList.remove('listening');
         }
     }
 
-    startVoiceRecording() {
-        if (this.isListening) return;
+    async startVoiceRecording() {
+        if (this.isListening || this.isProcessing) return;
 
-        this.startWaveAnimation();
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 16000
+                }
+            });
 
-        this.speechManager.startListening(
-            () => { this.isListening = true; },
-            (transcript) => {
-                this.stopVoiceRecording();
-                this.processQuestion(transcript);
-            },
-            (error) => {
+            this.audioChunks = [];
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                    ? 'audio/webm'
+                    : 'audio/mp4';
+
+            this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
+
+            this.mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    this.audioChunks.push(e.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
                 this.isListening = false;
                 this.stopWaveAnimation();
                 this.resetMicButton();
-            },
-            () => {
-                this.isListening = false;
-                this.stopWaveAnimation();
+                this.stopStream();
+
+                if (this.audioChunks.length === 0) {
+                    this.chatManager.showError(this.state.t('errorOccurred'));
+                    return;
+                }
+
+                const blob = new Blob(this.audioChunks, { type: mimeType });
+                await this.sendVoiceToBackend(blob);
+            };
+
+            this.mediaRecorder.start(250);
+            this.isListening = true;
+            this.startWaveAnimation();
+
+            // Auto-stop after 30 seconds max
+            this._autoStopTimer = setTimeout(() => {
+                if (this.isListening) this.stopVoiceRecording();
+            }, 30000);
+
+        } catch (err) {
+            console.error('Microphone error:', err);
+            this.isListening = false;
+            this.resetMicButton();
+            this.stopWaveAnimation();
+            if (window.showAlert) {
+                await window.showAlert(
+                    this.state.currentLanguage === 'id'
+                        ? 'Tidak bisa mengakses mikrofon. Pastikan izin mic sudah diberikan.'
+                        : 'Cannot access microphone. Please allow mic permission.'
+                );
+            } else {
+                this.chatManager.showError(
+                    this.state.currentLanguage === 'id'
+                        ? 'Tidak bisa mengakses mikrofon.'
+                        : 'Cannot access microphone.'
+                );
             }
-        );
+        }
     }
 
     stopVoiceRecording() {
-        if (this.isListening) {
-            this.speechManager.stopListening();
-            this.isListening = false;
-            this.stopWaveAnimation();
+        if (this._autoStopTimer) {
+            clearTimeout(this._autoStopTimer);
+            this._autoStopTimer = null;
         }
-    }
-
-    async processQuestion(question) {
-        try {
-            this.chatManager.appendUserMessage(question);
-            const typingEl = this.chatManager.showTypingIndicator();
-
-            const response = await ApiService.sendQuestion(question, this.state.currentLanguage);
-            this.chatManager.removeTypingIndicator();
-
-            if (response.success) {
-                this.displayAIResponseInChat(response);
-                this.chatManager.saveMessageToHistory(question, response, 'quran_ai');
-                this.speakResponse(response.answer);
-            } else {
-                this.chatManager.showError(this.state.t('aiCannotAnswer'));
+        if (this.mediaRecorder && this.isListening) {
+            try {
+                this.mediaRecorder.stop();
+            } catch (e) {
+                this.isListening = false;
+                this.stopWaveAnimation();
+                this.resetMicButton();
+                this.stopStream();
             }
-        } catch (error) {
-            this.chatManager.showError(this.state.t('errorOccurred'));
         }
     }
 
-    displayAIResponseInChat(response) {
+    stopStream() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(t => t.stop());
+            this.stream = null;
+        }
+    }
+
+    async sendVoiceToBackend(audioBlob) {
+        this.isProcessing = true;
+        this.chatManager.hideWelcomeState();
+        this.state.isFirstMessage = false;
+
+        if (this.state.currentChatId === null) {
+            await this.chatManager.createNewChat(false);
+        }
+
+        // Show temporary "listening..." user bubble
+        const processingMsg = this.state.currentLanguage === 'id'
+            ? '🎤 Memproses suara...'
+            : '🎤 Processing voice...';
+        this.chatManager.appendUserMessage(processingMsg);
+
+        const typingEl = this.chatManager.showTypingIndicator();
+
+        try {
+            const formData = new FormData();
+            const ext = audioBlob.type.includes('webm') ? 'webm' : 'mp4';
+            formData.append('audio', audioBlob, `recording.${ext}`);
+            formData.append('language', this.state.currentLanguage);
+
+            const response = await fetch(`${Constants.WORKER_URL}/api/voice-ask`, {
+                method: 'POST',
+                body: formData
+            });
+
+            // Remove the temporary processing message
+            const userMsgs = this.dom.chatContainer.querySelectorAll('.user-message');
+            if (userMsgs.length) userMsgs[userMsgs.length - 1].remove();
+
+            typingEl.remove();
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || errData.message || `HTTP ${response.status}`);
+            }
+
+            const contentType = response.headers.get('Content-Type') || '';
+
+            // Get text from headers (backend sets these)
+            const question = decodeURIComponent(response.headers.get('X-Text-Question') || '');
+            const answer = decodeURIComponent(response.headers.get('X-Text-Answer') || '');
+
+            if (question) {
+                this.chatManager.appendUserMessage(question);
+            }
+
+            if (contentType.includes('audio')) {
+                // Play ElevenLabs audio
+                const audioBlobRes = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlobRes);
+
+                // Show text answer in chat
+                if (answer) {
+                    this.displayTextResponse(answer);
+                    await this.chatManager.saveMessageToHistory(question || processingMsg, { answer, success: true }, 'quran_ai');
+                }
+
+                // Play audio
+                this.playAudio(audioUrl);
+            } else {
+                // Fallback JSON response (no audio)
+                const data = await response.json();
+                const q = data.question || question || processingMsg;
+                const a = data.answer || answer || '';
+
+                if (!question && data.question) {
+                    this.chatManager.appendUserMessage(data.question);
+                }
+                if (a) {
+                    this.displayTextResponse(a);
+                    await this.chatManager.saveMessageToHistory(q, { answer: a, success: true }, 'quran_ai');
+                }
+            }
+
+        } catch (error) {
+            console.error('Voice ask failed:', error);
+            typingEl.remove();
+            // Remove temp message if still there
+            const userMsgs = this.dom.chatContainer.querySelectorAll('.user-message');
+            if (userMsgs.length) {
+                const last = userMsgs[userMsgs.length - 1];
+                if (last.textContent.includes('🎤')) last.remove();
+            }
+            this.chatManager.showError(
+                this.state.currentLanguage === 'id'
+                    ? 'Gagal memproses suara. Coba lagi.'
+                    : 'Failed to process voice. Please try again.'
+            );
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+
+    displayTextResponse(text) {
         const responseEl = document.createElement('div');
         responseEl.className = 'ai-response';
-
-        let html = `
+        responseEl.innerHTML = `
             <div class="ai-header-badge">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
                 <span>Ustad AI</span>
             </div>
-            <div class="ai-text">${response.answer}</div>
+            <div class="ai-text">${text}</div>
         `;
-
-        if (response.verses_data && response.verses_data.length > 0) {
-            html += `<div class="verses-section">`;
-            response.verses_data.forEach(verse => {
-                html += `
-                    <div class="verse-container">
-                        <div class="verse-reference">${verse.reference}</div>
-                        <div class="arabic-text" dir="rtl">${verse.verse_arabic}</div>
-                        <div class="translation-text">${verse.verse_translation}</div>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
-
-        responseEl.innerHTML = html;
         this.dom.chatContainer.appendChild(responseEl);
         this.chatManager.scrollToBottom();
     }
 
-    speakResponse(text) {
-        const lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
-        this.speechManager.speak(text, {
-            lang: lang,
-            rate: 0.9,
-            onStart: () => { this.isSpeaking = true; },
-            onEnd: () => { this.isSpeaking = false; },
-            onError: () => { this.isSpeaking = false; }
-        });
+    playAudio(url) {
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
+        const audio = new Audio(url);
+        this.currentAudio = audio;
+        audio.play().catch(err => console.warn('Audio play failed:', err));
+        audio.onended = () => {
+            URL.revokeObjectURL(url);
+            this.currentAudio = null;
+        };
     }
 
     startWaveAnimation() {
@@ -2595,112 +2727,14 @@ class VoiceManager {
 
     closeVoicePanel() {
         this.stopVoiceRecording();
-        this.speechManager.stopSpeaking();
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
         this.dom.voiceOffcanvasOverlay.classList.remove('active');
         this.dom.offcanvasVoice.classList.remove('active');
         this.stopWaveAnimation();
         this.resetMicButton();
-    }
-}
-
-class WebSpeechManager {
-    constructor() {
-        this.synth = window.speechSynthesis;
-        this.recognition = null;
-        this.isListening = false;
-        this.isSpeaking = false;
-        this.initSpeechRecognition();
-    }
-
-    initSpeechRecognition() {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        this.recognition = new SpeechRecognition();
-        this.recognition.continuous = false;
-        this.recognition.interimResults = false;
-        this.recognition.lang = 'id-ID';
-
-        this.recognition.onstart = () => {
-            this.isListening = true;
-            if (this.onStartCallback) this.onStartCallback();
-        };
-
-        this.recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            if (this.onResultCallback) this.onResultCallback(transcript);
-        };
-
-        this.recognition.onerror = (event) => {
-            this.isListening = false;
-            if (this.onErrorCallback) this.onErrorCallback(event.error);
-        };
-
-        this.recognition.onend = () => {
-            this.isListening = false;
-            if (this.onEndCallback) this.onEndCallback();
-        };
-    }
-
-    setLanguage(lang) {
-        if (this.recognition) {
-            this.recognition.lang = lang === 'id' ? 'id-ID' : 'en-US';
-        }
-    }
-
-    startListening(onStart, onResult, onError, onEnd) {
-        if (!this.recognition) return false;
-
-        this.onStartCallback = onStart;
-        this.onResultCallback = onResult;
-        this.onErrorCallback = onError;
-        this.onEndCallback = onEnd;
-
-        try {
-            this.recognition.start();
-            return true;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    stopListening() {
-        if (this.recognition && this.isListening) {
-            this.recognition.stop();
-            this.isListening = false;
-        }
-    }
-
-    speak(text, options = {}) {
-        if (!this.synth) return false;
-
-        if (this.isSpeaking) {
-            this.synth.cancel();
-        }
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = options.lang || 'id-ID';
-        utterance.rate = options.rate || 0.9;
-
-        utterance.onstart = () => {
-            this.isSpeaking = true;
-            if (options.onStart) options.onStart();
-        };
-
-        utterance.onend = () => {
-            this.isSpeaking = false;
-            if (options.onEnd) options.onEnd();
-        };
-
-        this.synth.speak(utterance);
-        return true;
-    }
-
-    stopSpeaking() {
-        if (this.isSpeaking) {
-            this.synth.cancel();
-            this.isSpeaking = false;
-        }
     }
 }
 
@@ -3013,52 +3047,5 @@ if (window.lucide) {
 }
 </script>
 
-    <div id="elevenlabs-agent-container"></div>
-    <script src="https://elevenlabs.io/agent-widget/index.js" defer></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const agentOptions = {
-                agentId: "agent_1801kbypkmmqefn8z5zvzk508b70",
-                voice: {
-                    voiceId: "21m00Tcm4TlvDq8ikWAM",
-                    modelId: "eleven_multilingual_v2",
-                    settings: {
-                        stability: 0.5,
-                        similarity_boost: 0.8
-                    }
-                },
-                ui: {
-                    customTheme: {
-                        primaryColor: "#3b82f6",
-                        backgroundColor: "#18181b",
-                        textColor: "#ffffff"
-                    }
-                },
-                tools: {
-                    webhooks: [
-                        {
-                            name: "quran-ai-assistant-webhook",
-                            description: "AI assistant khusus untuk pertanyaan seputar Al-Quran",
-                            api_schema: {
-                                url: "https://ai-quran-workers.harisudahmalam.workers.dev/api/elevenhook",
-                                method: "POST"
-                            }
-                        }
-                    ]
-                }
-            };
-
-            if (window.ElevenLabs && window.ElevenLabs.Agent) {
-                const agent = new window.ElevenLabs.Agent(agentOptions);
-                window.ustadAgent = agent;
-                const waveBtn = document.getElementById('waveBtn');
-                if (waveBtn) {
-                    waveBtn.addEventListener('click', function() {
-                        if (agent && agent.toggle) agent.toggle();
-                    });
-                }
-            }
-        });
-    </script>
 </body>
 </html>
