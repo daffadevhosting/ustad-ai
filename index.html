@@ -964,6 +964,144 @@
             display: none !important;
         }
 
+        /* ========== Global Confirm & Alert Modal ========== */
+        .global-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 500;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+
+        .global-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .global-modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transform: scale(0.92) translateY(12px);
+            opacity: 0;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+            overflow: hidden;
+        }
+
+        .global-modal-overlay.active .global-modal {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .global-modal-header {
+            padding: 1.25rem 1.25rem 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .global-modal-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .global-modal-icon.confirm {
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+        }
+
+        .global-modal-icon.alert {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent-blue);
+        }
+
+        .global-modal-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .global-modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.35;
+            padding-top: 0.35rem;
+        }
+
+        .global-modal-body {
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .global-modal-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        .global-modal-actions {
+            display: flex;
+            gap: 0.625rem;
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .global-modal-btn {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .global-modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .global-modal-btn.cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .global-modal-btn.confirm {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .global-modal-btn.confirm:hover {
+            background: #dc2626;
+        }
+
+        .global-modal-btn.ok {
+            background: var(--accent-blue);
+            color: #ffffff;
+        }
+
+        .global-modal-btn.ok:hover {
+            background: var(--accent-blue-hover);
+        }
+
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .input-area {
@@ -1135,6 +1273,52 @@
         </div>
     </div>
 
+    <!-- Global Confirm Modal -->
+    <div class="global-modal-overlay" id="globalConfirmOverlay">
+        <div class="global-modal">
+            <div class="global-modal-header">
+                <div class="global-modal-icon confirm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                </div>
+                <div class="global-modal-title" id="globalConfirmTitle">Confirm</div>
+            </div>
+            <div class="global-modal-body">
+                <p class="global-modal-message" id="globalConfirmMessage"></p>
+            </div>
+            <div class="global-modal-actions">
+                <button class="global-modal-btn cancel" id="globalConfirmCancel">Cancel</button>
+                <button class="global-modal-btn confirm" id="globalConfirmOk">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Alert Modal -->
+    <div class="global-modal-overlay" id="globalAlertOverlay">
+        <div class="global-modal">
+            <div class="global-modal-header">
+                <div class="global-modal-icon alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <div class="global-modal-title" id="globalAlertTitle">Info</div>
+            </div>
+            <div class="global-modal-body">
+                <p class="global-modal-message" id="globalAlertMessage"></p>
+            </div>
+            <div class="global-modal-actions">
+                <button class="global-modal-btn ok" id="globalAlertOk">OK</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 // Quran AI Chat Application - Full i18n Version
 // ===============================================
@@ -1163,6 +1347,11 @@ const TRANSLATIONS = {
         versePrefix: "Ayat",
         deleteConfirm: "Apakah Anda yakin ingin menghapus percakapan ini?",
         deleteTitle: "Hapus",
+        deleteConfirmTitle: "Hapus Percakapan",
+        confirmCancel: "Batal",
+        confirmOk: "Hapus",
+        alertTitle: "Info",
+        alertOk: "Baik",
         today: "Hari ini",
         yesterday: "Kemarin",
         chatNotFound: "Percakapan tidak ditemukan",
@@ -1199,6 +1388,11 @@ const TRANSLATIONS = {
         versePrefix: "Verse",
         deleteConfirm: "Are you sure you want to delete this conversation?",
         deleteTitle: "Delete",
+        deleteConfirmTitle: "Delete Conversation",
+        confirmCancel: "Cancel",
+        confirmOk: "Delete",
+        alertTitle: "Info",
+        alertOk: "OK",
         today: "Today",
         yesterday: "Yesterday",
         chatNotFound: "Conversation not found",
@@ -1231,6 +1425,113 @@ const Constants = {
         en: 'en.sahih'
     }
 };
+
+// ========== Global Confirm & Alert System ==========
+const GlobalModal = {
+    _confirmResolve: null,
+    _alertResolve: null,
+
+    init() {
+        // Confirm buttons
+        document.getElementById('globalConfirmCancel')?.addEventListener('click', () => this._closeConfirm(false));
+        document.getElementById('globalConfirmOk')?.addEventListener('click', () => this._closeConfirm(true));
+        document.getElementById('globalConfirmOverlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'globalConfirmOverlay') this._closeConfirm(false);
+        });
+
+        // Alert button
+        document.getElementById('globalAlertOk')?.addEventListener('click', () => this._closeAlert());
+        document.getElementById('globalAlertOverlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'globalAlertOverlay') this._closeAlert();
+        });
+
+        // ESC key support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('globalConfirmOverlay')?.classList.contains('active')) {
+                    this._closeConfirm(false);
+                } else if (document.getElementById('globalAlertOverlay')?.classList.contains('active')) {
+                    this._closeAlert();
+                }
+            }
+        });
+    },
+
+    /**
+     * Show a themed confirm dialog
+     * @param {string} message - The message to display
+     * @param {object} options - Optional { title, confirmText, cancelText }
+     * @returns {Promise<boolean>} - true if confirmed, false if cancelled
+     */
+    confirm(message, options = {}) {
+        return new Promise((resolve) => {
+            this._confirmResolve = resolve;
+
+            const titleEl = document.getElementById('globalConfirmTitle');
+            const messageEl = document.getElementById('globalConfirmMessage');
+            const cancelBtn = document.getElementById('globalConfirmCancel');
+            const okBtn = document.getElementById('globalConfirmOk');
+            const overlay = document.getElementById('globalConfirmOverlay');
+
+            // Get current language translations if available
+            const app = window.quranAIApp;
+            const t = (key) => app?.state?.t?.(key) || key;
+
+            titleEl.textContent = options.title || t('deleteConfirmTitle') || 'Confirm';
+            messageEl.textContent = message;
+            cancelBtn.textContent = options.cancelText || t('confirmCancel') || 'Cancel';
+            okBtn.textContent = options.confirmText || t('confirmOk') || 'OK';
+
+            overlay.classList.add('active');
+        });
+    },
+
+    /**
+     * Show a themed alert dialog
+     * @param {string} message - The message to display
+     * @param {object} options - Optional { title, okText }
+     * @returns {Promise<void>}
+     */
+    alert(message, options = {}) {
+        return new Promise((resolve) => {
+            this._alertResolve = resolve;
+
+            const titleEl = document.getElementById('globalAlertTitle');
+            const messageEl = document.getElementById('globalAlertMessage');
+            const okBtn = document.getElementById('globalAlertOk');
+            const overlay = document.getElementById('globalAlertOverlay');
+
+            const app = window.quranAIApp;
+            const t = (key) => app?.state?.t?.(key) || key;
+
+            titleEl.textContent = options.title || t('alertTitle') || 'Info';
+            messageEl.textContent = message;
+            okBtn.textContent = options.okText || t('alertOk') || 'OK';
+
+            overlay.classList.add('active');
+        });
+    },
+
+    _closeConfirm(result) {
+        document.getElementById('globalConfirmOverlay')?.classList.remove('active');
+        if (this._confirmResolve) {
+            this._confirmResolve(result);
+            this._confirmResolve = null;
+        }
+    },
+
+    _closeAlert() {
+        document.getElementById('globalAlertOverlay')?.classList.remove('active');
+        if (this._alertResolve) {
+            this._alertResolve();
+            this._alertResolve = null;
+        }
+    }
+};
+
+// Expose globally for easy use
+window.showConfirm = (message, options) => GlobalModal.confirm(message, options);
+window.showAlert = (message, options) => GlobalModal.alert(message, options);
 
 // State Management
 class AppState {
@@ -1920,7 +2221,13 @@ class ChatManager {
     async deleteChat(chatId) {
         const message = this.state.t('deleteConfirm');
 
-        if (!confirm(message)) return;
+        const confirmed = await window.showConfirm(message, {
+            title: this.state.t('deleteConfirmTitle'),
+            confirmText: this.state.t('confirmOk'),
+            cancelText: this.state.t('confirmCancel')
+        });
+
+        if (!confirmed) return;
 
         const wasActiveChat = this.state.currentChatId === chatId;
 
@@ -2477,6 +2784,9 @@ class QuranAIApp {
         if (savedLang && (savedLang === 'id' || savedLang === 'en')) {
             this.state.setLanguage(savedLang);
         }
+
+        // Init themed global modals
+        GlobalModal.init();
 
         this.setupEventListeners();
         await this.loadInitialData();
