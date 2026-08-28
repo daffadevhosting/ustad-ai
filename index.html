@@ -1102,6 +1102,83 @@
             background: var(--accent-blue-hover);
         }
 
+
+        /* Neuron Usage Card */
+        .neuron-card {
+            margin: 0 0 1.25rem;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .neuron-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .neuron-card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .neuron-status-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+        }
+
+        .neuron-status-badge.awake {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .neuron-status-badge.asleep {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .neuron-bar-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .neuron-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease, background 0.3s ease;
+            background: var(--accent-blue);
+        }
+
+        .neuron-bar-fill.warn {
+            background: #f59e0b;
+        }
+
+        .neuron-bar-fill.danger {
+            background: #ef4444;
+        }
+
+        .neuron-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .neuron-meta strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .input-area {
@@ -1151,6 +1228,20 @@
                 </svg>
                 <span data-i18n="newChat">Obrolan Baru</span>
             </button>
+
+            <div class="neuron-card" id="neuronCard">
+                <div class="neuron-card-header">
+                    <span class="neuron-card-title" data-i18n="neuronUsage">Penggunaan Neuron</span>
+                    <span class="neuron-status-badge awake" id="neuronBadge">AI Aktif</span>
+                </div>
+                <div class="neuron-bar-track">
+                    <div class="neuron-bar-fill" id="neuronBar" style="width: 0%"></div>
+                </div>
+                <div class="neuron-meta">
+                    <span><strong id="neuronUsed">0</strong> / <span id="neuronLimit">10000</span></span>
+                    <span id="neuronRemainingLabel"><span data-i18n="remaining">Sisa</span>: <strong id="neuronRemaining">10000</strong></span>
+                </div>
+            </div>
 
             <div class="chat-history-title" data-i18n="recentChats">Obrolan Terbaru</div>
             <div class="chat-history-list" id="chatHistoryList">
@@ -1364,7 +1455,11 @@ const TRANSLATIONS = {
         newChatTitle: "Obrolan Baru",
         showVerseMsg: (name, num) => `${name} ayat ${num}`,
         verseOption: (i) => `Ayat ${i}`,
-        ayahsUnit: "ayat"
+        ayahsUnit: "ayat",
+        neuronUsage: "Penggunaan Neuron",
+        aiAwake: "AI Aktif",
+        aiAsleep: "AI Tidur",
+        remaining: "Sisa"
     },
     en: {
         chatHistory: "Chat History",
@@ -1405,7 +1500,11 @@ const TRANSLATIONS = {
         newChatTitle: "New Chat",
         showVerseMsg: (name, num) => `Show ${name} verse ${num}`,
         verseOption: (i) => `Verse ${i}`,
-        ayahsUnit: "verses"
+        ayahsUnit: "verses",
+        neuronUsage: "Neuron Usage",
+        aiAwake: "AI Active",
+        aiAsleep: "AI Sleeping",
+        remaining: "Left"
     }
 };
 
@@ -2825,6 +2924,10 @@ class QuranAIApp {
         this.setupEventListeners();
         await this.loadInitialData();
         this.applyLanguage();
+        await this.fetchNeuronStatus();
+
+        // Refresh neuron status every 60s
+        setInterval(() => this.fetchNeuronStatus(), 60000);
     }
 
     async loadInitialData() {
@@ -2995,6 +3098,7 @@ class QuranAIApp {
 
         if (this.state.setLanguage(newLanguage)) {
             this.applyLanguage();
+            this.fetchNeuronStatus();
         }
     }
 
@@ -3014,6 +3118,7 @@ class QuranAIApp {
         this.dom.offcanvasOverlay.classList.add('active');
         this.dom.offcanvasSidebar.classList.add('active');
         this.dom.menuIcon.classList.add('active');
+        this.fetchNeuronStatus();
     }
 
     closeOffcanvasMenu() {
@@ -3028,6 +3133,55 @@ class QuranAIApp {
 
     closeOffcanvasVoice() {
         this.voiceManager.closeVoicePanel();
+    }
+
+    async fetchNeuronStatus() {
+        try {
+            const res = await fetch(`${Constants.WORKER_URL}/api/neuron-status`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.success) {
+                this.updateNeuronUI(data);
+            }
+        } catch (e) {
+            console.warn('Failed to fetch neuron status:', e);
+        }
+    }
+
+    updateNeuronUI(data) {
+        const used = data.used ?? 0;
+        const limit = data.daily_limit ?? 10000;
+        const remaining = data.remaining ?? limit;
+        const percent = data.percent ?? 0;
+        const asleep = !!data.asleep;
+
+        const usedEl = document.getElementById('neuronUsed');
+        const limitEl = document.getElementById('neuronLimit');
+        const remainingEl = document.getElementById('neuronRemaining');
+        const barEl = document.getElementById('neuronBar');
+        const badgeEl = document.getElementById('neuronBadge');
+
+        if (usedEl) usedEl.textContent = Math.round(used).toLocaleString();
+        if (limitEl) limitEl.textContent = limit.toLocaleString();
+        if (remainingEl) remainingEl.textContent = Math.round(remaining).toLocaleString();
+
+        if (barEl) {
+            barEl.style.width = `${Math.min(100, percent)}%`;
+            barEl.classList.remove('warn', 'danger');
+            if (percent >= 90) barEl.classList.add('danger');
+            else if (percent >= 70) barEl.classList.add('warn');
+        }
+
+        if (badgeEl) {
+            badgeEl.classList.remove('awake', 'asleep');
+            if (asleep) {
+                badgeEl.classList.add('asleep');
+                badgeEl.textContent = this.state.t('aiAsleep');
+            } else {
+                badgeEl.classList.add('awake');
+                badgeEl.textContent = this.state.t('aiAwake');
+            }
+        }
     }
 }
 
