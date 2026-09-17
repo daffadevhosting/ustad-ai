@@ -2553,7 +2553,7 @@ class VerseManager {
 }
 
 // Voice Manager
-// ========== Voice Manager — ElevenLabs REST API via /api/voice-ask ==========
+// ========== Voice Manager — Uses Web Speech API for voice-to-text, then sends to backend ==========
 class VoiceManager {
     constructor(state, dom, chatManager) {
         this.state = state;
@@ -2565,6 +2565,9 @@ class VoiceManager {
         this.audioChunks = [];
         this.stream = null;
         this.currentAudio = null;
+        this.recognition = null;
+        this.transcript = '';
+        this.finalTranscript = '';
     }
 
     openVoicePanel() {
@@ -2590,46 +2593,83 @@ class VoiceManager {
     async startVoiceRecording() {
         if (this.isListening || this.isProcessing) return;
 
+        // Reset transcript
+        this.transcript = '';
+        this.finalTranscript = '';
+
+        // Check if browser supports SpeechRecognition
+        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const supportsSpeechRecognition = !!SpeechRecognitionAPI;
+
+        if (supportsSpeechRecognition) {
+            // Use Web Speech API for voice-to-text
+            this.startSpeechRecognition();
+        } else {
+            // Fallback: Use microphone recording and hope backend can handle it
+            // or show error that speech recognition is not supported
+            this.showSpeechRecognitionError();
+        }
+    }
+
+    startSpeechRecognition() {
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 16000
+            const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognitionAPI();
+            
+            // Configure recognition
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
+            this.recognition.maxAlternatives = 1;
+
+            // Handle results
+            this.recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcriptChunk = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcriptChunk;
+                    } else {
+                        interimTranscript += transcriptChunk;
+                    }
                 }
-            });
 
-            this.audioChunks = [];
-            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-                ? 'audio/webm;codecs=opus'
-                : MediaRecorder.isTypeSupported('audio/webm')
-                    ? 'audio/webm'
-                    : 'audio/mp4';
+                this.finalTranscript += finalTranscript;
+                this.transcript = this.finalTranscript + interimTranscript;
+            };
 
-            this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
-
-            this.mediaRecorder.ondataavailable = (e) => {
-                if (e.data && e.data.size > 0) {
-                    this.audioChunks.push(e.data);
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                this.stopVoiceRecording();
+                if (event.error === 'not-allowed') {
+                    this.chatManager.showError(
+                        this.state.currentLanguage === 'id'
+                            ? 'Izin mikrofon ditolak. Silakan izinkan akses mikrofon.'
+                            : 'Microphone permission denied. Please allow microphone access.'
+                    );
+                } else {
+                    this.chatManager.showError(
+                        this.state.currentLanguage === 'id'
+                            ? 'Terjadi kesalahan dalam pengenalan suara.'
+                            : 'An error occurred in speech recognition.'
+                    );
                 }
             };
 
-            this.mediaRecorder.onstop = async () => {
-                this.isListening = false;
-                this.stopWaveAnimation();
-                this.resetMicButton();
-                this.stopStream();
-
-                if (this.audioChunks.length === 0) {
-                    this.chatManager.showError(this.state.t('errorOccurred'));
-                    return;
+            this.recognition.onend = () => {
+                if (this.isListening) {
+                    // Recognition ended unexpectedly, restart it
+                    setTimeout(() => {
+                        if (this.isListening) {
+                            this.startSpeechRecognition();
+                        }
+                    }, 100);
                 }
-
-                const blob = new Blob(this.audioChunks, { type: mimeType });
-                await this.sendVoiceToBackend(blob);
             };
 
-            this.mediaRecorder.start(250);
+            this.recognition.start();
             this.isListening = true;
             this.startWaveAnimation();
 
@@ -2639,40 +2679,63 @@ class VoiceManager {
             }, 30000);
 
         } catch (err) {
-            console.error('Microphone error:', err);
+            console.error('Speech recognition setup error:', err);
             this.isListening = false;
             this.resetMicButton();
             this.stopWaveAnimation();
-            if (window.showAlert) {
-                await window.showAlert(
-                    this.state.currentLanguage === 'id'
-                        ? 'Tidak bisa mengakses mikrofon. Pastikan izin mic sudah diberikan.'
-                        : 'Cannot access microphone. Please allow mic permission.'
-                );
-            } else {
-                this.chatManager.showError(
-                    this.state.currentLanguage === 'id'
-                        ? 'Tidak bisa mengakses mikrofon.'
-                        : 'Cannot access microphone.'
-                );
-            }
+            this.chatManager.showError(
+                this.state.currentLanguage === 'id'
+                    ? 'Tidak dapat memulai pengenalan suara.'
+                    : 'Could not start speech recognition.'
+            );
         }
     }
 
     stopVoiceRecording() {
+        // Clear auto-stop timer
         if (this._autoStopTimer) {
             clearTimeout(this._autoStopTimer);
             this._autoStopTimer = null;
         }
+
+        // Stop speech recognition
+        if (this.recognition) {
+            try {
+                this.recognition.stop();
+                this.recognition = null;
+            } catch (e) {
+                console.warn('Error stopping recognition:', e);
+            }
+        }
+
+        // Stop media recorder if it exists (fallback)
         if (this.mediaRecorder && this.isListening) {
             try {
                 this.mediaRecorder.stop();
             } catch (e) {
-                this.isListening = false;
-                this.stopWaveAnimation();
-                this.resetMicButton();
-                this.stopStream();
+                console.warn('Error stopping media recorder:', e);
             }
+        }
+
+        // Stop stream
+        this.stopStream();
+
+        this.isListening = false;
+        this.stopWaveAnimation();
+        this.resetMicButton();
+
+        // If we have a transcript from speech recognition, send it
+        if (this.finalTranscript && this.finalTranscript.trim()) {
+            this.sendTextToBackend(this.finalTranscript.trim());
+        } else if (this.transcript && this.transcript.trim()) {
+            this.sendTextToBackend(this.transcript.trim());
+        } else {
+            // No transcript available
+            this.chatManager.showError(
+                this.state.currentLanguage === 'id'
+                    ? 'Tidak ada teks yang dikenali.'
+                    : 'No speech was recognized.'
+            );
         }
     }
 
@@ -2683,7 +2746,15 @@ class VoiceManager {
         }
     }
 
-    async sendVoiceToBackend(audioBlob) {
+    showSpeechRecognitionError() {
+        this.chatManager.showError(
+            this.state.currentLanguage === 'id'
+                ? 'Browser Anda tidak mendukung pengenalan suara. Gunakan input teks atau browser lain.'
+                : 'Your browser does not support speech recognition. Please use text input or a different browser.'
+        );
+    }
+
+    async sendTextToBackend(text) {
         this.isProcessing = true;
         this.chatManager.hideWelcomeState();
         this.state.isFirstMessage = false;
@@ -2692,7 +2763,7 @@ class VoiceManager {
             await this.chatManager.createNewChat(false);
         }
 
-        // Show temporary "listening..." user bubble
+        // Show temporary user message
         const processingMsg = this.state.currentLanguage === 'id'
             ? 'Memproses suara...'
             : 'Processing voice...';
@@ -2702,14 +2773,8 @@ class VoiceManager {
 
         try {
             const formData = new FormData();
-            const ext = audioBlob.type.includes('webm') ? 'webm' : 'mp4';
-            formData.append('audio', audioBlob, `recording.${ext}`);
+            formData.append('text', text);
             formData.append('language', this.state.currentLanguage);
-
-            const transcriptHint = this.state.currentLanguage === 'id'
-                ? 'Saya menerima rekaman suara.'
-                : 'I received a voice recording.';
-            formData.append('text', transcriptHint);
 
             const response = await fetch(`${Constants.WORKER_URL}/api/voice-ask`, {
                 method: 'POST',
@@ -2745,7 +2810,7 @@ class VoiceManager {
                 // Show text answer in chat
                 if (answer) {
                     this.displayTextResponse(answer);
-                    await this.chatManager.saveMessageToHistory(question || processingMsg, { answer, success: true }, 'quran_ai');
+                    await this.chatManager.saveMessageToHistory(question || text, { answer, success: true }, 'quran_ai');
                 }
 
                 // Play audio, but fall back to browser speech if ElevenLabs is unavailable or blocked
@@ -2753,7 +2818,7 @@ class VoiceManager {
             } else {
                 // Fallback JSON response (no audio)
                 const data = await response.json();
-                const q = data.question || question || processingMsg;
+                const q = data.question || question || text;
                 const a = data.answer || answer || '';
 
                 if (!question && data.question) {
@@ -2773,7 +2838,9 @@ class VoiceManager {
             const userMsgs = this.dom.chatContainer.querySelectorAll('.user-message');
             if (userMsgs.length) {
                 const last = userMsgs[userMsgs.length - 1];
-                if (last.textContent.includes('🎤')) last.remove();
+                if (last.textContent.includes('🎤') || last.textContent.includes('Memproses') || last.textContent.includes('Processing')) {
+                    last.remove();
+                }
             }
             this.chatManager.showError(
                 this.state.currentLanguage === 'id'
@@ -2783,6 +2850,13 @@ class VoiceManager {
         } finally {
             this.isProcessing = false;
         }
+    }
+
+    // Legacy method - kept for compatibility but no longer used
+    async sendVoiceToBackend(audioBlob) {
+        console.warn('sendVoiceToBackend is deprecated. Use sendTextToBackend instead.');
+        // If called, try to send text hint instead
+        await this.sendTextToBackend('');
     }
 
     displayTextResponse(text) {
