@@ -2585,7 +2585,7 @@ class VoiceManager {
             this.startVoiceRecording();
             if (micButton) micButton.classList.add('listening');
         } else {
-            this.stopVoiceRecording();
+            this.stopVoiceRecording(true); // true = shouldSend
             if (micButton) micButton.classList.remove('listening');
         }
     }
@@ -2642,7 +2642,7 @@ class VoiceManager {
 
             this.recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
-                this.stopVoiceRecording();
+                this.stopVoiceRecording(false); // Don't send on error
                 if (event.error === 'not-allowed') {
                     this.chatManager.showError(
                         this.state.currentLanguage === 'id'
@@ -2675,7 +2675,7 @@ class VoiceManager {
 
             // Auto-stop after 30 seconds max
             this._autoStopTimer = setTimeout(() => {
-                if (this.isListening) this.stopVoiceRecording();
+                if (this.isListening) this.stopVoiceRecording(true); // Auto-send after timeout
             }, 30000);
 
         } catch (err) {
@@ -2691,7 +2691,7 @@ class VoiceManager {
         }
     }
 
-    stopVoiceRecording() {
+    stopVoiceRecording(shouldSend = false) {
         // Clear auto-stop timer
         if (this._autoStopTimer) {
             clearTimeout(this._autoStopTimer);
@@ -2724,18 +2724,21 @@ class VoiceManager {
         this.stopWaveAnimation();
         this.resetMicButton();
 
-        // If we have a transcript from speech recognition, send it
-        if (this.finalTranscript && this.finalTranscript.trim()) {
-            this.sendTextToBackend(this.finalTranscript.trim());
-        } else if (this.transcript && this.transcript.trim()) {
-            this.sendTextToBackend(this.transcript.trim());
-        } else {
-            // No transcript available
-            this.chatManager.showError(
-                this.state.currentLanguage === 'id'
-                    ? 'Tidak ada teks yang dikenali.'
-                    : 'No speech was recognized.'
-            );
+        // Only send transcript if explicitly requested (when clicking mic button)
+        // When closing panel, just cancel without sending
+        if (shouldSend) {
+            if (this.finalTranscript && this.finalTranscript.trim()) {
+                this.sendTextToBackend(this.finalTranscript.trim());
+            } else if (this.transcript && this.transcript.trim()) {
+                this.sendTextToBackend(this.transcript.trim());
+            } else {
+                // No transcript available
+                this.chatManager.showError(
+                    this.state.currentLanguage === 'id'
+                        ? 'Tidak ada teks yang dikenali.'
+                        : 'No speech was recognized.'
+                );
+            }
         }
     }
 
@@ -2919,7 +2922,7 @@ class VoiceManager {
     }
 
     closeVoicePanel() {
-        this.stopVoiceRecording();
+        this.stopVoiceRecording(false); // false = don't send, just cancel
         if (this.currentAudio) {
             this.currentAudio.pause();
             this.currentAudio = null;
