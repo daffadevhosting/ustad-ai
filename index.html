@@ -2743,8 +2743,8 @@ class VoiceManager {
                     await this.chatManager.saveMessageToHistory(question || processingMsg, { answer, success: true }, 'quran_ai');
                 }
 
-                // Play audio
-                this.playAudio(audioUrl);
+                // Play audio, but fall back to browser speech if ElevenLabs is unavailable or blocked
+                this.playAudio(audioUrl, answer || '');
             } else {
                 // Fallback JSON response (no audio)
                 const data = await response.json();
@@ -2756,6 +2756,7 @@ class VoiceManager {
                 }
                 if (a) {
                     this.displayTextResponse(a);
+                    this.speakText(a);
                     await this.chatManager.saveMessageToHistory(q, { answer: a, success: true }, 'quran_ai');
                 }
             }
@@ -2795,14 +2796,28 @@ class VoiceManager {
         this.chatManager.scrollToBottom();
     }
 
-    playAudio(url) {
+    speakText(text) {
+        if (!text || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = this.state.currentLanguage === 'id' ? 'id-ID' : 'en-US';
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    playAudio(url, fallbackText = '') {
         if (this.currentAudio) {
             this.currentAudio.pause();
             this.currentAudio = null;
         }
         const audio = new Audio(url);
         this.currentAudio = audio;
-        audio.play().catch(err => console.warn('Audio play failed:', err));
+        audio.play().catch(err => {
+            console.warn('Audio play failed:', err);
+            if (fallbackText) this.speakText(fallbackText);
+        });
         audio.onended = () => {
             URL.revokeObjectURL(url);
             this.currentAudio = null;
