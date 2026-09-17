@@ -2694,8 +2694,8 @@ class VoiceManager {
 
         // Show temporary "listening..." user bubble
         const processingMsg = this.state.currentLanguage === 'id'
-            ? '🎤 Memproses suara...'
-            : '🎤 Processing voice...';
+            ? 'Memproses suara...'
+            : 'Processing voice...';
         this.chatManager.appendUserMessage(processingMsg);
 
         const typingEl = this.chatManager.showTypingIndicator();
@@ -2705,6 +2705,11 @@ class VoiceManager {
             const ext = audioBlob.type.includes('webm') ? 'webm' : 'mp4';
             formData.append('audio', audioBlob, `recording.${ext}`);
             formData.append('language', this.state.currentLanguage);
+
+            const transcriptHint = this.state.currentLanguage === 'id'
+                ? 'Saya menerima rekaman suara.'
+                : 'I received a voice recording.';
+            formData.append('text', transcriptHint);
 
             const response = await fetch(`${Constants.WORKER_URL}/api/voice-ask`, {
                 method: 'POST',
